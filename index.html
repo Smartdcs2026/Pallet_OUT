@@ -6,7 +6,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f766e">
-  <meta name="description" content="ระบบบันทึกข้อมูลการส่งออกไม้พาเลท LOSCAM และ CHEP">
+  <meta name="description" content="ระบบบันทึกข้อมูลการส่งออกไม้พาเลท">
 
   <!-- ป้องกัน cache ระหว่างพัฒนา -->
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
@@ -85,7 +85,7 @@
         </form>
 
         <div class="loginFootnote">
-          วันที่และเวลาที่บันทึกจะใช้รูปแบบ dd/MM/yyyy HH:mm:ss
+          หลังบันทึกแล้ว พขร.ไม่ต้องสแกนออก
         </div>
       </div>
     </section>
@@ -102,7 +102,7 @@
           <div class="brandMiniMark">P</div>
           <div class="topbarTitle">
             <h1>พาเลทขาออก</h1>
-            <p>LOSCAM / CHEP</p>
+            <p>SmartDCs</p>
           </div>
         </div>
 
@@ -141,7 +141,7 @@
 
         <div class="summaryPanel">
           <div class="summaryItem">
-            <span>รายการรอบันทึกขาออก</span>
+            <span>จำนวนรอบันทึกขาออก</span>
             <strong id="openCountText">0</strong>
           </div>
 
@@ -164,7 +164,7 @@
       <section id="emptyState" class="emptyState isHidden">
         <div class="emptyIcon">✓</div>
         <h2>ไม่พบรายการที่รอบันทึกขาออก</h2>
-        <p>รายการที่แสดงจะต้องเป็น “รับพาเลท”, ยี่ห้อ LOSCAM/CHEP และยังไม่มี Timestamp Out</p>
+        <p>รายการที่แสดงจะต้องเป็น “รับพาเลท”,และยังไม่มี Timestamp Out</p>
         <button id="emptyRefreshBtn" class="secondaryBtn" type="button">
           ตรวจสอบอีกครั้ง
         </button>
