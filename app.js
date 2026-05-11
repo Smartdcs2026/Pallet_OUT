@@ -1,0 +1,1185 @@
+/* =====================================================
+ * Pallet OUT System - Frontend App
+ * File: app.js
+ * ใช้กับ index.html + style.css
+ * ===================================================== */
+
+(function () {
+  "use strict";
+
+  /* =========================
+   * CONFIG
+   * ========================= */
+
+  const CONFIG = Object.assign(
+    {
+      API_BASE: "",
+      MAX_IMAGES: 4,
+      MIN_IMAGES: 1,
+      IMAGE_MAX_WIDTH: 1280,
+      IMAGE_MAX_HEIGHT: 1280,
+      IMAGE_QUALITY: 0.78,
+      IMAGE_OUTPUT_TYPE: "image/jpeg",
+      DATE_TIME_FORMAT: "dd/MM/yyyy HH:mm:ss"
+    },
+    window.APP_CONFIG || {}
+  );
+
+  const STORAGE_KEY_USER = "PALLET_OUT_CURRENT_USER";
+  const STORAGE_KEY_LOGIN_AT = "PALLET_OUT_LOGIN_AT";
+
+  const ECD_REGEX = /^[A-Za-z0-9]+$/;
+
+  const state = {
+    currentUser: "",
+    options: {
+      brands: [],
+      palletQty: []
+    },
+    inboundRows: [],
+    filteredRows: [],
+    selectedEvidenceFiles: [],
+    selectedEvidencePayloads: [],
+    selectedBrand: "",
+    selectedQty: "",
+    isSubmitting: false
+  };
+
+  /* =========================
+   * DOM
+   * ========================= */
+
+  const $ = (id) => document.getElementById(id);
+
+  const els = {
+    loginView: $("loginView"),
+    mainView: $("mainView"),
+    loginForm: $("loginForm"),
+    passInput: $("passInput"),
+    loginBtn: $("loginBtn"),
+    togglePassBtn: $("togglePassBtn"),
+
+    currentUserName: $("currentUserName"),
+    logoutBtn: $("logoutBtn"),
+    refreshBtn: $("refreshBtn"),
+    emptyRefreshBtn: $("emptyRefreshBtn"),
+
+    searchInput: $("searchInput"),
+    openCountText: $("openCountText"),
+    lastUpdatedText: $("lastUpdatedText"),
+
+    statusBox: $("statusBox"),
+    statusText: $("statusText"),
+    emptyState: $("emptyState"),
+    inboundList: $("inboundList"),
+
+    evidenceInput: $("evidenceInput")
+  };
+
+  /* =========================
+   * INIT
+   * ========================= */
+
+  document.addEventListener("DOMContentLoaded", init);
+
+  function init() {
+    bindEvents();
+
+    const savedUser = sessionStorage.getItem(STORAGE_KEY_USER) || "";
+    if (savedUser) {
+      state.currentUser = savedUser;
+      showMainView(savedUser);
+      loadInitialData();
+    } else {
+      showLoginView();
+    }
+  }
+
+  function bindEvents() {
+    if (els.loginForm) {
+      els.loginForm.addEventListener("submit", handleLoginSubmit);
+    }
+
+    if (els.togglePassBtn) {
+      els.togglePassBtn.addEventListener("click", togglePassword);
+    }
+
+    if (els.logoutBtn) {
+      els.logoutBtn.addEventListener("click", handleLogout);
+    }
+
+    if (els.refreshBtn) {
+      els.refreshBtn.addEventListener("click", loadInboundRows);
+    }
+
+    if (els.emptyRefreshBtn) {
+      els.emptyRefreshBtn.addEventListener("click", loadInboundRows);
+    }
+
+    if (els.searchInput) {
+      els.searchInput.addEventListener("input", handleSearch);
+    }
+
+    if (els.evidenceInput) {
+      els.evidenceInput.addEventListener("change", handleEvidenceInputChange);
+    }
+  }
+
+  /* =========================
+   * VIEW CONTROL
+   * ========================= */
+
+  function showLoginView() {
+    els.loginView.classList.remove("isHidden");
+    els.mainView.classList.add("isHidden");
+
+    setTimeout(() => {
+      if (els.passInput) els.passInput.focus();
+    }, 100);
+  }
+
+  function showMainView(name) {
+    els.loginView.classList.add("isHidden");
+    els.mainView.classList.remove("isHidden");
+
+    els.currentUserName.textContent = name || "-";
+  }
+
+  function setStatus(show, text) {
+    if (!els.statusBox) return;
+
+    if (show) {
+      els.statusBox.classList.remove("isHidden");
+      els.statusText.textContent = text || "กำลังโหลดข้อมูล...";
+    } else {
+      els.statusBox.classList.add("isHidden");
+    }
+  }
+
+  function setEmptyState(show) {
+    if (!els.emptyState) return;
+
+    if (show) {
+      els.emptyState.classList.remove("isHidden");
+    } else {
+      els.emptyState.classList.add("isHidden");
+    }
+  }
+
+  function setButtonLoading(button, isLoading, loadingText) {
+    if (!button) return;
+
+    if (isLoading) {
+      button.dataset.originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = loadingText || "กำลังทำงาน...";
+    } else {
+      button.disabled = false;
+      button.textContent = button.dataset.originalText || button.textContent;
+    }
+  }
+
+  /* =========================
+   * LOGIN
+   * ========================= */
+
+  async function handleLoginSubmit(e) {
+    e.preventDefault();
+
+    const pass = String(els.passInput.value || "").trim();
+
+    if (!pass) {
+      await Swal.fire({
+        icon: "warning",
+        title: "กรุณากรอกรหัส",
+        text: "ต้องกรอกรหัสผู้ใช้งานก่อนเข้าสู่ระบบ",
+        confirmButtonText: "ตกลง"
+      });
+      return;
+    }
+
+    try {
+      setButtonLoading(els.loginBtn, true, "กำลังตรวจสอบ...");
+
+      const res = await apiPost("/api/login", { pass });
+
+      if (!res.ok) {
+        await Swal.fire({
+          icon: "error",
+          title: "เข้าสู่ระบบไม่สำเร็จ",
+          text: res.message || "รหัสผ่านไม่ถูกต้อง",
+          confirmButtonText: "ตกลง"
+        });
+        return;
+      }
+
+      const name = String(res.name || "").trim();
+
+      if (!name) {
+        throw new Error("ระบบไม่พบชื่อผู้ใช้งานจากรหัสนี้");
+      }
+
+      state.currentUser = name;
+
+      sessionStorage.setItem(STORAGE_KEY_USER, name);
+      sessionStorage.setItem(STORAGE_KEY_LOGIN_AT, getNowDisplay());
+
+      els.passInput.value = "";
+
+      showMainView(name);
+
+      await Swal.fire({
+        icon: "success",
+        title: "เข้าสู่ระบบสำเร็จ",
+        text: "ผู้ใช้งาน: " + name,
+        timer: 1200,
+        showConfirmButton: false
+      });
+
+      await loadInitialData();
+
+    } catch (err) {
+      await showError(err);
+    } finally {
+      setButtonLoading(els.loginBtn, false);
+    }
+  }
+
+  function togglePassword() {
+    const input = els.passInput;
+    if (!input) return;
+
+    const isPassword = input.type === "password";
+    input.type = isPassword ? "text" : "password";
+    els.togglePassBtn.textContent = isPassword ? "ซ่อน" : "แสดง";
+  }
+
+  async function handleLogout() {
+    const result = await Swal.fire({
+      icon: "question",
+      title: "ออกจากระบบ?",
+      text: "ต้องการออกจากระบบใช่หรือไม่",
+      showCancelButton: true,
+      confirmButtonText: "ออกจากระบบ",
+      cancelButtonText: "ยกเลิก",
+      reverseButtons: true
+    });
+
+    if (!result.isConfirmed) return;
+
+    sessionStorage.removeItem(STORAGE_KEY_USER);
+    sessionStorage.removeItem(STORAGE_KEY_LOGIN_AT);
+
+    state.currentUser = "";
+    state.inboundRows = [];
+    state.filteredRows = [];
+    state.options = { brands: [], palletQty: [] };
+
+    renderInboundRows([]);
+    updateSummary();
+
+    showLoginView();
+  }
+
+  /* =========================
+   * DATA LOADING
+   * ========================= */
+
+  async function loadInitialData() {
+    try {
+      setStatus(true, "กำลังโหลดตัวเลือกและข้อมูลขาเข้า...");
+
+      await Promise.all([
+        loadOptions(),
+        loadInboundRows(false)
+      ]);
+
+    } catch (err) {
+      await showError(err);
+    } finally {
+      setStatus(false);
+    }
+  }
+
+  async function loadOptions() {
+    const res = await apiGet("/api/options");
+
+    if (!res.ok) {
+      throw new Error(res.message || "โหลดตัวเลือกไม่สำเร็จ");
+    }
+
+    state.options.brands = Array.isArray(res.brands) ? res.brands : [];
+    state.options.palletQty = Array.isArray(res.palletQty) ? res.palletQty : [];
+
+    state.options.brands = state.options.brands
+      .filter((b) => b && b.brand)
+      .map((b) => ({
+        brand: String(b.brand || "").trim().toUpperCase(),
+        imageId: String(b.imageId || "").trim(),
+        imageUrl: String(b.imageUrl || "").trim()
+      }));
+
+    state.options.palletQty = state.options.palletQty
+      .map((n) => Number(n))
+      .filter((n) => Number.isFinite(n) && n > 0)
+      .sort((a, b) => a - b);
+  }
+
+  async function loadInboundRows(showLoading = true) {
+    try {
+      if (showLoading) {
+        setStatus(true, "กำลังโหลดรายการรอบันทึกขาออก...");
+      }
+
+      const res = await apiGet("/api/inbound-open");
+
+      if (!res.ok) {
+        throw new Error(res.message || "โหลดรายการขาเข้าไม่สำเร็จ");
+      }
+
+      state.inboundRows = Array.isArray(res.rows) ? res.rows : [];
+      state.filteredRows = state.inboundRows.slice();
+
+      if (els.searchInput) {
+        const q = String(els.searchInput.value || "").trim();
+        if (q) {
+          applySearch(q);
+        }
+      }
+
+      renderInboundRows(state.filteredRows);
+      updateSummary();
+
+    } catch (err) {
+      await showError(err);
+    } finally {
+      if (showLoading) {
+        setStatus(false);
+      }
+    }
+  }
+
+  /* =========================
+   * SEARCH
+   * ========================= */
+
+  function handleSearch(e) {
+    const q = String(e.target.value || "").trim();
+    applySearch(q);
+    renderInboundRows(state.filteredRows);
+    updateSummary();
+  }
+
+  function applySearch(query) {
+    const q = normalizeForSearch(query);
+
+    if (!q) {
+      state.filteredRows = state.inboundRows.slice();
+      return;
+    }
+
+    state.filteredRows = state.inboundRows.filter((row) => {
+      const haystack = [
+        row.autoId,
+        row.timestampIn,
+        row.reason,
+        row.brandIn,
+        row.plateNo,
+        row.prefix,
+        row.firstName,
+        row.lastName,
+        row.driverFullName,
+        row.driverCompany,
+        row.phone
+      ]
+        .map(normalizeForSearch)
+        .join(" ");
+
+      return haystack.includes(q);
+    });
+  }
+
+  /* =========================
+   * RENDER LIST
+   * ========================= */
+
+  function renderInboundRows(rows) {
+    if (!els.inboundList) return;
+
+    els.inboundList.innerHTML = "";
+
+    const list = Array.isArray(rows) ? rows : [];
+
+    if (!list.length) {
+      setEmptyState(true);
+      return;
+    }
+
+    setEmptyState(false);
+
+    const fragment = document.createDocumentFragment();
+
+    list.forEach((row) => {
+      const card = document.createElement("article");
+      card.className = "inboundCard";
+      card.dataset.autoId = row.autoId || "";
+
+      const brandClass = String(row.brandIn || "").toUpperCase() === "CHEP"
+        ? "brandBadge brandChep"
+        : "brandBadge brandLoscam";
+
+      card.innerHTML = `
+        <div class="cardHeader">
+          <div>
+            <div class="plateText">${escapeHtml(row.plateNo || "-")}</div>
+            <div class="autoIdText">Auto ID: ${escapeHtml(row.autoId || "-")}</div>
+          </div>
+          <span class="${brandClass}">${escapeHtml(row.brandIn || "-")}</span>
+        </div>
+
+        <div class="cardBody">
+          <div class="infoGrid">
+            <div class="infoItem">
+              <span>พขร.</span>
+              <strong>${escapeHtml(row.driverFullName || joinName(row) || "-")}</strong>
+            </div>
+
+            <div class="infoItem">
+              <span>ต้นสังกัด</span>
+              <strong>${escapeHtml(row.driverCompany || "-")}</strong>
+            </div>
+
+            <div class="infoItem">
+              <span>เวลาเข้า</span>
+              <strong>${escapeHtml(row.timestampIn || "-")}</strong>
+            </div>
+
+            <div class="infoItem">
+              <span>เบอร์โทร</span>
+              <strong>${escapeHtml(row.phone || "-")}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="cardActions">
+          <button class="primaryBtn recordOutBtn" type="button">
+            บันทึกขาออก
+          </button>
+        </div>
+      `;
+
+      const btn = card.querySelector(".recordOutBtn");
+      btn.addEventListener("click", () => openRecordOutDialog(row));
+
+      card.addEventListener("click", (ev) => {
+        if (ev.target && ev.target.closest("button")) return;
+        openRecordOutDialog(row);
+      });
+
+      fragment.appendChild(card);
+    });
+
+    els.inboundList.appendChild(fragment);
+  }
+
+  function updateSummary() {
+    const total = state.filteredRows.length;
+
+    if (els.openCountText) {
+      els.openCountText.textContent = String(total);
+    }
+
+    if (els.lastUpdatedText) {
+      els.lastUpdatedText.textContent = getNowDisplay();
+    }
+  }
+
+  /* =========================
+   * SWEETALERT FORM
+   * ========================= */
+
+  async function openRecordOutDialog(row) {
+    if (state.isSubmitting) return;
+
+    resetDialogState();
+
+    const html = buildRecordOutDialogHtml(row);
+
+    const result = await Swal.fire({
+      title: "บันทึกพาเลทขาออก",
+      html,
+      width: 860,
+      showCancelButton: true,
+      confirmButtonText: "บันทึกขาออก",
+      cancelButtonText: "ยกเลิก",
+      reverseButtons: true,
+      focusConfirm: false,
+      allowOutsideClick: () => !state.isSubmitting,
+      allowEscapeKey: () => !state.isSubmitting,
+      didOpen: () => {
+        initDialogEvents(row);
+      },
+      preConfirm: async () => {
+        try {
+          return await collectAndValidateDialogData(row);
+        } catch (err) {
+          Swal.showValidationMessage(err.message || String(err));
+          return false;
+        }
+      }
+    });
+
+    if (!result.isConfirmed || !result.value) return;
+
+    await submitOutRecord(result.value);
+  }
+
+  function resetDialogState() {
+    state.selectedEvidenceFiles = [];
+    state.selectedEvidencePayloads = [];
+    state.selectedBrand = "";
+    state.selectedQty = "";
+    state.isSubmitting = false;
+
+    if (els.evidenceInput) {
+      els.evidenceInput.value = "";
+    }
+  }
+
+  function buildRecordOutDialogHtml(row) {
+    const brandsHtml = buildBrandOptionsHtml();
+    const qtyHtml = buildQtyOptionsHtml();
+
+    return `
+      <div class="outDialog">
+        <section class="dialogSection">
+          <h3>ข้อมูลขาเข้า</h3>
+
+          <div class="dialogInfoGrid">
+            ${dialogInfo("Auto ID", row.autoId)}
+            ${dialogInfo("เวลาเข้า", row.timestampIn)}
+            ${dialogInfo("เหตุผล", row.reason)}
+            ${dialogInfo("ยี่ห้อขาเข้า", row.brandIn)}
+            ${dialogInfo("ทะเบียนรถ", row.plateNo)}
+            ${dialogInfo("พขร.", row.driverFullName || joinName(row))}
+            ${dialogInfo("ต้นสังกัด", row.driverCompany)}
+            ${dialogInfo("เบอร์โทร", row.phone)}
+          </div>
+        </section>
+
+        <section class="dialogSection">
+          <h3>ข้อมูลขาออก</h3>
+
+          <div class="fieldGroup">
+            <label>เลือกยี่ห้อพาเลทขาออก <em>*</em></label>
+            <div id="brandSelectGrid" class="brandSelectGrid">
+              ${brandsHtml}
+            </div>
+          </div>
+
+          <div class="fieldGroup">
+            <label>จำนวนพาเลทขาออก <em>*</em></label>
+            <div id="qtySelectGrid" class="qtySelectGrid">
+              ${qtyHtml}
+              <button type="button" class="qtyChip" data-qty="custom">อื่นๆ</button>
+            </div>
+
+            <input
+              id="customQtyInput"
+              class="dialogInput isHidden"
+              type="number"
+              inputmode="numeric"
+              min="1"
+              step="1"
+              placeholder="กรอกจำนวนเอง"
+            >
+          </div>
+
+          <div class="fieldGroup">
+            <label for="ecdNameInput">ชื่อ ECD <em>*</em></label>
+            <input
+              id="ecdNameInput"
+              class="dialogInput"
+              type="text"
+              inputmode="latin"
+              autocomplete="off"
+              placeholder="เช่น ECD001"
+              maxlength="30"
+            >
+            <div class="helpText">ใช้ได้เฉพาะ A-Z, a-z, 0-9 ห้ามเว้นวรรคและห้ามอักขระพิเศษ</div>
+          </div>
+
+          <div class="fieldGroup">
+            <label>รูปหลักฐาน <em>*</em></label>
+
+            <div class="evidenceControl">
+              <button id="pickEvidenceBtn" type="button" class="secondaryBtn">
+                ถ่ายภาพ / เลือกรูป
+              </button>
+              <span id="evidenceCountText" class="evidenceCount">
+                ยังไม่ได้เลือกรูป
+              </span>
+            </div>
+
+            <div class="helpText">ต้องมีอย่างน้อย 1 รูป และสูงสุด 4 รูป</div>
+            <div id="evidencePreviewGrid" class="evidencePreviewGrid"></div>
+          </div>
+
+          <div class="fieldGroup">
+            <label for="noteInput">หมายเหตุ</label>
+            <textarea
+              id="noteInput"
+              class="dialogTextarea"
+              rows="3"
+              placeholder="ระบุหมายเหตุเพิ่มเติมถ้ามี"
+            ></textarea>
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
+  function buildBrandOptionsHtml() {
+    const brands = state.options.brands || [];
+
+    if (!brands.length) {
+      return `<div class="optionMissing">ไม่พบตัวเลือก Brand ในชีท Brand</div>`;
+    }
+
+    return brands.map((b) => {
+      const brand = escapeHtml(b.brand || "");
+      const imageUrl = escapeAttr(b.imageUrl || "");
+
+      return `
+        <button type="button" class="brandOption" data-brand="${brand}">
+          <div class="brandImageBox">
+            ${
+              imageUrl
+                ? `<img src="${imageUrl}" alt="${brand}" loading="lazy">`
+                : `<span>${brand}</span>`
+            }
+          </div>
+          <strong>${brand}</strong>
+        </button>
+      `;
+    }).join("");
+  }
+
+  function buildQtyOptionsHtml() {
+    const qtyList = state.options.palletQty || [];
+
+    if (!qtyList.length) {
+      return "";
+    }
+
+    return qtyList.map((qty) => {
+      return `<button type="button" class="qtyChip" data-qty="${Number(qty)}">${Number(qty)}</button>`;
+    }).join("");
+  }
+
+  function dialogInfo(label, value) {
+    return `
+      <div class="dialogInfoItem">
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value || "-")}</strong>
+      </div>
+    `;
+  }
+
+  function initDialogEvents(row) {
+    const brandButtons = document.querySelectorAll(".brandOption");
+    const qtyButtons = document.querySelectorAll(".qtyChip");
+    const customQtyInput = $("customQtyInput");
+    const ecdNameInput = $("ecdNameInput");
+    const pickEvidenceBtn = $("pickEvidenceBtn");
+
+    brandButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        brandButtons.forEach((b) => b.classList.remove("isSelected"));
+        btn.classList.add("isSelected");
+        state.selectedBrand = String(btn.dataset.brand || "").trim().toUpperCase();
+      });
+    });
+
+    qtyButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        qtyButtons.forEach((b) => b.classList.remove("isSelected"));
+        btn.classList.add("isSelected");
+
+        const qty = String(btn.dataset.qty || "").trim();
+
+        if (qty === "custom") {
+          state.selectedQty = "custom";
+          customQtyInput.classList.remove("isHidden");
+          setTimeout(() => customQtyInput.focus(), 50);
+        } else {
+          state.selectedQty = qty;
+          customQtyInput.classList.add("isHidden");
+          customQtyInput.value = "";
+        }
+      });
+    });
+
+    if (ecdNameInput) {
+      ecdNameInput.addEventListener("input", () => {
+        ecdNameInput.value = ecdNameInput.value
+          .replace(/[^A-Za-z0-9]/g, "")
+          .toUpperCase();
+      });
+    }
+
+    if (pickEvidenceBtn) {
+      pickEvidenceBtn.addEventListener("click", () => {
+        if (!els.evidenceInput) return;
+        els.evidenceInput.value = "";
+        els.evidenceInput.click();
+      });
+    }
+
+    updateEvidencePreview();
+  }
+
+  async function collectAndValidateDialogData(row) {
+    const customQtyInput = $("customQtyInput");
+    const ecdNameInput = $("ecdNameInput");
+    const noteInput = $("noteInput");
+
+    const brandOut = String(state.selectedBrand || "").trim().toUpperCase();
+
+    if (!brandOut) {
+      throw new Error("กรุณาเลือกยี่ห้อพาเลทขาออก");
+    }
+
+    let qtyOut = 0;
+
+    if (state.selectedQty === "custom") {
+      qtyOut = Number(customQtyInput.value || 0);
+    } else {
+      qtyOut = Number(state.selectedQty || 0);
+    }
+
+    if (!Number.isFinite(qtyOut) || qtyOut <= 0) {
+      throw new Error("กรุณาระบุจำนวนพาเลทขาออกเป็นตัวเลขมากกว่า 0");
+    }
+
+    qtyOut = Math.floor(qtyOut);
+
+    const ecdName = String(ecdNameInput.value || "").trim().toUpperCase();
+
+    if (!ecdName) {
+      throw new Error("กรุณากรอกชื่อ ECD");
+    }
+
+    if (!ECD_REGEX.test(ecdName)) {
+      throw new Error("ชื่อ ECD กรอกได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
+    }
+
+    if (state.selectedEvidenceFiles.length < CONFIG.MIN_IMAGES) {
+      throw new Error("กรุณาแนบรูปหลักฐานอย่างน้อย 1 รูป");
+    }
+
+    if (state.selectedEvidenceFiles.length > CONFIG.MAX_IMAGES) {
+      throw new Error("แนบรูปหลักฐานได้สูงสุด 4 รูปเท่านั้น");
+    }
+
+    if (!state.selectedEvidencePayloads.length) {
+      Swal.showValidationMessage("กำลังเตรียมรูปภาพ กรุณารอสักครู่...");
+      state.selectedEvidencePayloads = await compressSelectedImages(state.selectedEvidenceFiles);
+    }
+
+    if (state.selectedEvidencePayloads.length < CONFIG.MIN_IMAGES) {
+      throw new Error("ไม่สามารถเตรียมข้อมูลรูปภาพได้ กรุณาเลือกรูปใหม่");
+    }
+
+    return {
+      autoId: row.autoId,
+      brandOut,
+      qtyOut,
+      ecdName,
+      recordedBy: state.currentUser,
+      note: String(noteInput.value || "").trim(),
+      images: state.selectedEvidencePayloads
+    };
+  }
+
+  /* =========================
+   * EVIDENCE IMAGES
+   * ========================= */
+
+  async function handleEvidenceInputChange(e) {
+    const files = Array.from(e.target.files || []);
+
+    if (!files.length) return;
+
+    const imageFiles = files.filter((file) => {
+      return file && file.type && file.type.indexOf("image/") === 0;
+    });
+
+    if (!imageFiles.length) {
+      await Swal.fire({
+        icon: "warning",
+        title: "ไฟล์ไม่ถูกต้อง",
+        text: "กรุณาเลือกเฉพาะไฟล์รูปภาพ",
+        confirmButtonText: "ตกลง"
+      });
+      return;
+    }
+
+    const merged = state.selectedEvidenceFiles.concat(imageFiles);
+
+    if (merged.length > CONFIG.MAX_IMAGES) {
+      await Swal.fire({
+        icon: "warning",
+        title: "รูปเกินจำนวน",
+        text: "แนบรูปหลักฐานได้สูงสุด " + CONFIG.MAX_IMAGES + " รูปเท่านั้น",
+        confirmButtonText: "ตกลง"
+      });
+
+      state.selectedEvidenceFiles = merged.slice(0, CONFIG.MAX_IMAGES);
+    } else {
+      state.selectedEvidenceFiles = merged;
+    }
+
+    state.selectedEvidencePayloads = [];
+
+    updateEvidencePreview();
+
+    try {
+      const countText = $("evidenceCountText");
+      if (countText) countText.textContent = "กำลังเตรียมรูปภาพ...";
+
+      state.selectedEvidencePayloads = await compressSelectedImages(state.selectedEvidenceFiles);
+
+      updateEvidencePreview();
+
+    } catch (err) {
+      await showError(err);
+    }
+  }
+
+  function updateEvidencePreview() {
+    const grid = $("evidencePreviewGrid");
+    const countText = $("evidenceCountText");
+
+    if (countText) {
+      const count = state.selectedEvidenceFiles.length;
+      countText.textContent = count
+        ? `เลือกรูปแล้ว ${count}/${CONFIG.MAX_IMAGES} รูป`
+        : "ยังไม่ได้เลือกรูป";
+    }
+
+    if (!grid) return;
+
+    grid.innerHTML = "";
+
+    state.selectedEvidenceFiles.forEach((file, index) => {
+      const url = URL.createObjectURL(file);
+
+      const item = document.createElement("div");
+      item.className = "evidenceThumb";
+      item.innerHTML = `
+        <img src="${url}" alt="รูปหลักฐาน ${index + 1}">
+        <button type="button" class="removeEvidenceBtn" data-index="${index}" aria-label="ลบรูป">×</button>
+      `;
+
+      item.querySelector(".removeEvidenceBtn").addEventListener("click", () => {
+        removeEvidenceAt(index);
+      });
+
+      grid.appendChild(item);
+    });
+  }
+
+  function removeEvidenceAt(index) {
+    state.selectedEvidenceFiles.splice(index, 1);
+    state.selectedEvidencePayloads = [];
+    updateEvidencePreview();
+
+    if (state.selectedEvidenceFiles.length) {
+      compressSelectedImages(state.selectedEvidenceFiles)
+        .then((payloads) => {
+          state.selectedEvidencePayloads = payloads;
+          updateEvidencePreview();
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    }
+  }
+
+  async function compressSelectedImages(files) {
+    const list = Array.from(files || []);
+
+    if (list.length > CONFIG.MAX_IMAGES) {
+      throw new Error("แนบรูปหลักฐานได้สูงสุด " + CONFIG.MAX_IMAGES + " รูปเท่านั้น");
+    }
+
+    const payloads = [];
+
+    for (let i = 0; i < list.length; i++) {
+      const file = list[i];
+      const payload = await compressImageToPayload(file, i + 1);
+      payloads.push(payload);
+    }
+
+    return payloads;
+  }
+
+  function compressImageToPayload(file, index) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type || file.type.indexOf("image/") !== 0) {
+        reject(new Error("พบไฟล์ที่ไม่ใช่รูปภาพ"));
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const img = new Image();
+
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            const originalWidth = img.width || 1;
+            const originalHeight = img.height || 1;
+
+            const ratio = Math.min(
+              CONFIG.IMAGE_MAX_WIDTH / originalWidth,
+              CONFIG.IMAGE_MAX_HEIGHT / originalHeight,
+              1
+            );
+
+            const targetWidth = Math.max(1, Math.round(originalWidth * ratio));
+            const targetHeight = Math.max(1, Math.round(originalHeight * ratio));
+
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+
+            ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+            const mimeType = CONFIG.IMAGE_OUTPUT_TYPE || "image/jpeg";
+            const quality = Number(CONFIG.IMAGE_QUALITY || 0.78);
+
+            const dataUrl = canvas.toDataURL(mimeType, quality);
+            const base64 = dataUrl.split(",").pop();
+
+            resolve({
+              name: buildImageName(file.name, index),
+              mimeType,
+              data: base64
+            });
+
+          } catch (err) {
+            reject(err);
+          }
+        };
+
+        img.onerror = () => {
+          reject(new Error("ไม่สามารถอ่านรูปภาพได้"));
+        };
+
+        img.src = String(reader.result || "");
+      };
+
+      reader.onerror = () => {
+        reject(new Error("ไม่สามารถอ่านไฟล์รูปภาพได้"));
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function buildImageName(originalName, index) {
+    const safeName = String(originalName || "evidence")
+      .replace(/\.[^.]+$/, "")
+      .replace(/[^A-Za-z0-9ก-ฮะ-์_-]+/g, "_")
+      .slice(0, 40);
+
+    return `evidence_${String(index).padStart(2, "0")}_${safeName}.jpg`;
+  }
+
+  /* =========================
+   * SUBMIT
+   * ========================= */
+
+  async function submitOutRecord(payload) {
+    try {
+      state.isSubmitting = true;
+
+      Swal.fire({
+        title: "กำลังบันทึกข้อมูล",
+        html: "กำลังอัปโหลดรูปและบันทึกข้อมูลขาออก กรุณารอจนกว่าระบบจะแจ้งผล",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const res = await apiPost("/api/submit-out", payload, 240000);
+
+      if (!res.ok) {
+        throw new Error(res.message || "บันทึกข้อมูลไม่สำเร็จ");
+      }
+
+      await Swal.fire({
+        icon: "success",
+        title: "บันทึกสำเร็จ",
+        html: `
+          <div class="successSummary">
+            <div><span>Outbound ID</span><strong>${escapeHtml(res.outboundId || "-")}</strong></div>
+            <div><span>Auto ID</span><strong>${escapeHtml(res.autoId || "-")}</strong></div>
+            <div><span>เวลาออก</span><strong>${escapeHtml(res.timestampOut || "-")}</strong></div>
+            <div><span>Duration</span><strong>${escapeHtml(res.duration || "-")}</strong></div>
+          </div>
+        `,
+        confirmButtonText: "ตกลง"
+      });
+
+      await loadInboundRows();
+
+    } catch (err) {
+      await showError(err);
+    } finally {
+      state.isSubmitting = false;
+    }
+  }
+
+  /* =========================
+   * API
+   * ========================= */
+
+  async function apiGet(path, timeoutMs = 60000) {
+    const url = buildApiUrl(path);
+
+    const res = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json"
+      },
+      cache: "no-store"
+    }, timeoutMs);
+
+    return parseApiResponse(res);
+  }
+
+  async function apiPost(path, body, timeoutMs = 60000) {
+    const url = buildApiUrl(path);
+
+    const res = await fetchWithTimeout(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(body || {}),
+      cache: "no-store"
+    }, timeoutMs);
+
+    return parseApiResponse(res);
+  }
+
+  function buildApiUrl(path) {
+    const base = String(CONFIG.API_BASE || "").replace(/\/+$/, "");
+
+    if (!base || base.indexOf("YOUR-WORKER") >= 0) {
+      throw new Error("ยังไม่ได้ตั้งค่า API_BASE ใน index.html ให้เป็น URL ของ Cloudflare Worker จริง");
+    }
+
+    return base + path;
+  }
+
+  async function parseApiResponse(res) {
+    const text = await res.text();
+
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      throw new Error("API ไม่ได้คืนค่าเป็น JSON: " + text.slice(0, 300));
+    }
+
+    if (!res.ok && data && !data.message) {
+      data.message = "เกิดข้อผิดพลาดจาก API";
+    }
+
+    return data;
+  }
+
+  function fetchWithTimeout(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs || 60000);
+
+    return fetch(url, {
+      ...options,
+      signal: controller.signal
+    })
+      .catch((err) => {
+        if (err && err.name === "AbortError") {
+          throw new Error("เชื่อมต่อ API เกินเวลาที่กำหนด กรุณาลองใหม่");
+        }
+        throw err;
+      })
+      .finally(() => {
+        clearTimeout(timer);
+      });
+  }
+
+  /* =========================
+   * UTILITIES
+   * ========================= */
+
+  async function showError(err) {
+    console.error(err);
+
+    await Swal.fire({
+      icon: "error",
+      title: "เกิดข้อผิดพลาด",
+      text: err && err.message ? err.message : String(err),
+      confirmButtonText: "ตกลง"
+    });
+  }
+
+  function getNowDisplay() {
+    const d = new Date();
+
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    const ss = String(d.getSeconds()).padStart(2, "0");
+
+    return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+  }
+
+  function joinName(row) {
+    return [row.prefix, row.firstName, row.lastName]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  function normalizeForSearch(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value).replace(/`/g, "&#096;");
+  }
+
+})();
