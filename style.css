@@ -829,24 +829,29 @@ img {
    BRAND SELECT
 ========================= */
 
+/* =========================
+   BRAND SELECT - COMPACT FULL IMAGE
+========================= */
+
 .brandSelectGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
+  gap: 8px;
 }
 
 .brandOption {
   position: relative;
   display: grid;
-  grid-template-rows: minmax(96px, auto) auto;
-  gap: 6px;
+  grid-template-rows: 78px auto;
+  gap: 5px;
   place-items: center;
-  min-height: 142px;
-  padding: 9px;
+  min-height: 112px;
+  padding: 7px;
   border: 2px solid var(--border);
-  border-radius: 16px;
+  border-radius: 14px;
   background: #ffffff;
   color: var(--text);
+  overflow: hidden;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease,
@@ -868,13 +873,14 @@ img {
 .brandOption.isSelected::after {
   content: "เลือกแล้ว";
   position: absolute;
-  top: 7px;
-  right: 7px;
-  padding: 3px 7px;
+  top: 5px;
+  right: 5px;
+  z-index: 2;
+  padding: 2px 6px;
   border-radius: 999px;
   background: var(--primary);
   color: #ffffff;
-  font-size: 0.66rem;
+  font-size: 0.58rem;
   font-weight: 900;
 }
 
@@ -882,21 +888,22 @@ img {
   display: grid;
   place-items: center;
   width: 100%;
-  height: 96px;
-  border-radius: 13px;
+  height: 78px;
+  border-radius: 10px;
   background: #ffffff;
   border: 1px solid #dbe3ea;
   overflow: hidden;
 }
 
 .brandImageBox img {
+  display: block;
   width: 100%;
   height: 100%;
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  object-position: center;
-  padding: 2px;
+  object-position: center center;
+  padding: 0;
 }
 
 .brandImageBox span {
@@ -905,10 +912,13 @@ img {
 }
 
 .brandOption strong {
-  font-size: 0.96rem;
-  line-height: 1.05;
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 0.84rem;
+  line-height: 1;
   font-weight: 900;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
 }
 
 .optionMissing {
