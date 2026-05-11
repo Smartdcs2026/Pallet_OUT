@@ -22,10 +22,10 @@
   >
 
   <!-- SweetAlert2 -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
   <!-- Main CSS -->
-  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="./style.css?v=2">
 </head>
 
 <body>
@@ -64,10 +64,11 @@
               name="pass"
               type="password"
               inputmode="numeric"
-              autocomplete="off"
+              autocomplete="new-password"
               placeholder="กรอกรหัส"
               required
             >
+
             <button
               id="togglePassBtn"
               class="iconBtn"
@@ -180,32 +181,31 @@
 
 
   <!-- =========================
-    Hidden File Input
+    Hidden File Inputs
     ใช้โดย app.js ตอนเปิด SweetAlert
-    รองรับทั้งถ่ายภาพและเลือกภาพ
   ========================== -->
-  <!-- เปิดกล้องถ่ายภาพ -->
-<input
-  id="cameraInput"
-  class="hiddenFileInput"
-  type="file"
-  accept="image/*"
-  capture="environment"
->
 
-<!-- เลือกรูปจากเครื่อง / คลังภาพ -->
-<input
-  id="uploadInput"
-  class="hiddenFileInput"
-  type="file"
-  accept="image/*"
-  multiple
->
+  <!-- เปิดกล้องถ่ายภาพ -->
+  <input
+    id="cameraInput"
+    class="hiddenFileInput"
+    type="file"
+    accept="image/*"
+    capture="environment"
+  >
+
+  <!-- เลือกรูปจากเครื่อง / คลังภาพ -->
+  <input
+    id="uploadInput"
+    class="hiddenFileInput"
+    type="file"
+    accept="image/*"
+    multiple
+  >
 
 
   <!-- =========================
     App Config
-    แก้ API_BASE หลัง Deploy Worker
   ========================== -->
   <script>
     window.APP_CONFIG = {
@@ -221,6 +221,6 @@
   </script>
 
   <!-- Main JS -->
-  <script src="./app.js?v=1"></script>
+  <script src="./app.js?v=2" defer></script>
 </body>
 </html>
