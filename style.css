@@ -167,6 +167,17 @@ img {
   font-size: 0.82rem;
 }
 
+.dangerSoftBtn {
+  color: var(--danger-dark) !important;
+  background: var(--danger-soft) !important;
+  border-color: #fecaca !important;
+}
+
+.dangerSoftBtn:hover {
+  background: #fecaca !important;
+  border-color: #fca5a5 !important;
+}
+
 
 /* =========================
    LOGIN
@@ -715,7 +726,8 @@ img {
    RECORD OUT DIALOG
 ========================= */
 
-.outDialog {
+.outDialog,
+.editOutboundDialog {
   display: grid;
   gap: 10px;
   text-align: left;
@@ -951,6 +963,16 @@ img {
 
 .manageMenuBtn.danger:hover {
   background: #fecaca;
+}
+
+.manageMenuBtn.edit {
+  background: var(--success-soft);
+  color: var(--success-dark);
+  border-color: #bbf7d0;
+}
+
+.manageMenuBtn.edit:hover {
+  background: #bbf7d0;
 }
 
 
@@ -1223,6 +1245,136 @@ img {
 
 
 /* =========================
+   OUTBOUND HISTORY / EDIT
+========================= */
+
+.editSearchBox {
+  display: grid;
+  gap: 12px;
+  text-align: left;
+}
+
+.emptyEditResult {
+  display: grid;
+  place-items: center;
+  gap: 9px;
+  padding: 18px 10px;
+  text-align: center;
+}
+
+.emptyEditResult h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.emptyEditResult p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.outboundHistoryWrap {
+  display: grid;
+  gap: 10px;
+  text-align: left;
+}
+
+.outboundHistoryToolbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.96);
+  border: 1px solid var(--border);
+}
+
+.outboundHistoryToolbar span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.outboundHistoryList {
+  display: grid;
+  gap: 9px;
+}
+
+.outboundHistoryCard {
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.outboundHistoryHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.outboundHistoryInfo {
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.editAuditLine {
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: var(--info-soft);
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.editAuditLine.muted {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: var(--muted);
+}
+
+.outboundHistoryActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.outboundHistoryActions button {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+}
+
+.editOutboundDialog .dialogSection {
+  background: var(--surface-soft);
+}
+
+.editOutboundDialog select.dialogInput {
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+
+.editOutboundDialog .confirmNote {
+  margin-top: 0;
+}
+
+
+/* =========================
    RESPONSIVE TABLET
 ========================= */
 
@@ -1486,7 +1638,8 @@ img {
     font-size: 0.9rem !important;
   }
 
-  .outDialog {
+  .outDialog,
+  .editOutboundDialog {
     gap: 8px;
   }
 
@@ -1663,6 +1816,69 @@ img {
     padding: 8px;
     font-size: 0.74rem;
   }
+
+  .editSearchBox {
+    gap: 9px;
+  }
+
+  .outboundHistoryToolbar {
+    padding: 7px;
+    border-radius: 12px;
+  }
+
+  .outboundHistoryToolbar .secondaryBtn {
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 0.78rem;
+  }
+
+  .outboundHistoryToolbar span {
+    font-size: 0.74rem;
+  }
+
+  .outboundHistoryList {
+    gap: 7px;
+  }
+
+  .outboundHistoryCard {
+    padding: 8px;
+    border-radius: 14px;
+    gap: 7px;
+  }
+
+  .outboundHistoryInfo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px 7px;
+    padding-top: 7px;
+  }
+
+  .editAuditLine {
+    padding: 6px 7px;
+    font-size: 0.68rem;
+    border-radius: 9px;
+  }
+
+  .outboundHistoryActions {
+    gap: 6px;
+  }
+
+  .outboundHistoryActions button {
+    min-height: 34px;
+    padding: 7px 8px;
+    font-size: 0.76rem;
+  }
+
+  .emptyEditResult {
+    padding: 14px 8px;
+  }
+
+  .emptyEditResult h3 {
+    font-size: 0.92rem;
+  }
+
+  .emptyEditResult p {
+    font-size: 0.78rem;
+  }
 }
 
 
@@ -1790,5 +2006,45 @@ img {
   .swal2-cancel {
     width: auto !important;
     min-width: 112px !important;
+  }
+
+  .outboundHistoryToolbar {
+    gap: 6px;
+  }
+
+  .outboundHistoryToolbar .secondaryBtn {
+    min-height: 32px;
+    padding: 6px 8px;
+    font-size: 0.7rem;
+  }
+
+  .outboundHistoryToolbar span {
+    font-size: 0.68rem;
+  }
+
+  .outboundHistoryHead {
+    gap: 6px;
+  }
+
+  .outboundHistoryCard {
+    padding: 7px;
+  }
+
+  .outboundHistoryInfo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .outboundHistoryActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .outboundHistoryActions button {
+    min-height: 32px;
+    padding: 6px 6px;
+    font-size: 0.68rem;
+  }
+
+  .editAuditLine {
+    font-size: 0.64rem;
   }
 }
