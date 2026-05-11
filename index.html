@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <title>ระบบบันทึกพาเลทขาออก</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="description" content="ระบบบันทึกข้อมูลการส่งออกไม้พาเลท LOSCAM และ CHEP">
+
+  <!-- ป้องกัน cache ระหว่างพัฒนา -->
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="./style.css?v=1">
+</head>
+
+<body>
+  <noscript>
+    <div class="noscriptBox">
+      ระบบนี้จำเป็นต้องเปิดใช้งาน JavaScript กรุณาเปิด JavaScript ในเบราว์เซอร์ก่อนใช้งาน
+    </div>
+  </noscript>
+
+  <div id="appRoot" class="appRoot">
+
+    <!-- =========================
+      LOGIN VIEW
+    ========================== -->
+    <section id="loginView" class="loginView">
+      <div class="loginCard">
+        <div class="loginBrand">
+          <div class="brandMark">P</div>
+          <div>
+            <h1>ระบบบันทึกพาเลทขาออก</h1>
+            <p>LOSCAM / CHEP</p>
+          </div>
+        </div>
+
+        <div class="loginInfoBox">
+          <strong>เข้าสู่ระบบ</strong>
+          <span>กรอกรหัสผู้ใช้งานเพื่อเริ่มบันทึกข้อมูลขาออก</span>
+        </div>
+
+        <form id="loginForm" class="loginForm" autocomplete="off">
+          <label for="passInput">รหัสผู้ใช้งาน</label>
+
+          <div class="passwordWrap">
+            <input
+              id="passInput"
+              name="pass"
+              type="password"
+              inputmode="numeric"
+              autocomplete="off"
+              placeholder="กรอกรหัส"
+              required
+            >
+            <button
+              id="togglePassBtn"
+              class="iconBtn"
+              type="button"
+              aria-label="แสดงหรือซ่อนรหัส"
+            >
+              แสดง
+            </button>
+          </div>
+
+          <button id="loginBtn" class="primaryBtn" type="submit">
+            เข้าสู่ระบบ
+          </button>
+        </form>
+
+        <div class="loginFootnote">
+          วันที่และเวลาที่บันทึกจะใช้รูปแบบ dd/MM/yyyy HH:mm:ss
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =========================
+      MAIN VIEW
+    ========================== -->
+    <section id="mainView" class="mainView isHidden">
+
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="topbarLeft">
+          <div class="brandMiniMark">P</div>
+          <div class="topbarTitle">
+            <h1>พาเลทขาออก</h1>
+            <p>LOSCAM / CHEP</p>
+          </div>
+        </div>
+
+        <div class="topbarRight">
+          <div class="userBadge">
+            <span class="userLabel">ผู้ใช้งาน</span>
+            <strong id="currentUserName">-</strong>
+          </div>
+
+          <button id="logoutBtn" class="secondaryBtn smallBtn" type="button">
+            ออกจากระบบ
+          </button>
+        </div>
+      </header>
+
+
+      <!-- Toolbar -->
+      <section class="toolbar">
+        <div class="toolbarMain">
+          <div class="searchBox">
+            <label for="searchInput">ค้นหารายการ</label>
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="ค้นหา Auto ID, ทะเบียนรถ, ชื่อ พขร., เบอร์โทร"
+              autocomplete="off"
+            >
+          </div>
+
+          <div class="toolbarActions">
+            <button id="refreshBtn" class="secondaryBtn" type="button">
+              โหลดข้อมูลใหม่
+            </button>
+          </div>
+        </div>
+
+        <div class="summaryPanel">
+          <div class="summaryItem">
+            <span>รายการรอบันทึกขาออก</span>
+            <strong id="openCountText">0</strong>
+          </div>
+
+          <div class="summaryItem">
+            <span>อัปเดตล่าสุด</span>
+            <strong id="lastUpdatedText">-</strong>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- Status / Loading -->
+      <section id="statusBox" class="statusBox isHidden">
+        <div class="spinner"></div>
+        <span id="statusText">กำลังโหลดข้อมูล...</span>
+      </section>
+
+
+      <!-- Empty State -->
+      <section id="emptyState" class="emptyState isHidden">
+        <div class="emptyIcon">✓</div>
+        <h2>ไม่พบรายการที่รอบันทึกขาออก</h2>
+        <p>รายการที่แสดงจะต้องเป็น “รับพาเลท”, ยี่ห้อ LOSCAM/CHEP และยังไม่มี Timestamp Out</p>
+        <button id="emptyRefreshBtn" class="secondaryBtn" type="button">
+          ตรวจสอบอีกครั้ง
+        </button>
+      </section>
+
+
+      <!-- Inbound List -->
+      <main class="contentWrap">
+        <div id="inboundList" class="inboundList"></div>
+      </main>
+
+    </section>
+  </div>
+
+
+  <!-- =========================
+    Hidden File Input
+    ใช้โดย app.js ตอนเปิด SweetAlert
+    รองรับทั้งถ่ายภาพและเลือกภาพ
+  ========================== -->
+  <input
+    id="evidenceInput"
+    class="hiddenFileInput"
+    type="file"
+    accept="image/*"
+    capture="environment"
+    multiple
+  >
+
+
+  <!-- =========================
+    App Config
+    แก้ API_BASE หลัง Deploy Worker
+  ========================== -->
+  <script>
+    window.APP_CONFIG = {
+      API_BASE: "https://YOUR-WORKER.workers.dev",
+      MAX_IMAGES: 4,
+      MIN_IMAGES: 1,
+      IMAGE_MAX_WIDTH: 1280,
+      IMAGE_MAX_HEIGHT: 1280,
+      IMAGE_QUALITY: 0.78,
+      IMAGE_OUTPUT_TYPE: "image/jpeg",
+      DATE_TIME_FORMAT: "dd/MM/yyyy HH:mm:ss"
+    };
+  </script>
+
+  <!-- Main JS -->
+  <script src="./app.js?v=1"></script>
+</body>
+</html>
