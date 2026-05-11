@@ -86,18 +86,31 @@
   document.addEventListener("DOMContentLoaded", init);
 
   function init() {
-    bindEvents();
+  bindEvents();
 
-    const savedUser = sessionStorage.getItem(STORAGE_KEY_USER) || "";
+  const savedUser = sessionStorage.getItem(STORAGE_KEY_USER) || "";
 
-    if (savedUser) {
-      state.currentUser = savedUser;
-      showMainView(savedUser);
-      loadInitialData();
-    } else {
-      showLoginView();
-    }
+  if (savedUser) {
+    state.currentUser = savedUser;
+    showMainView(savedUser);
+    loadInitialData();
+    return;
   }
+
+  showLoginView();
+
+  const passFromUrl = getPassFromUrl();
+
+  if (passFromUrl && els.passInput) {
+    els.passInput.value = passFromUrl;
+
+    setTimeout(() => {
+      if (els.loginForm) {
+        els.loginForm.requestSubmit();
+      }
+    }, 300);
+  }
+}
 
   function bindEvents() {
     if (els.loginForm) {
@@ -1195,7 +1208,10 @@
         clearTimeout(timer);
       });
   }
-
+function getPassFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return String(params.get("pass") || "").trim();
+}
   /* =========================
    * UTILITIES
    * ========================= */
