@@ -386,6 +386,9 @@ state.filteredRows = state.inboundRows.slice();
   /* =========================
    * SEARCH
    * ========================= */
+  /* =========================
+   * SEARCH
+   * ========================= */
 
   function handleSearch(e) {
     const q = String(e.target.value || "").trim();
@@ -398,66 +401,77 @@ state.filteredRows = state.inboundRows.slice();
     const q = normalizeForSearch(query);
 
     if (!q) {
-      state.filteredRows = state.inboundRows.slice();
+      state.filteredRows = sortRowsByLatestTimestamp(state.inboundRows);
       return;
     }
 
     state.filteredRows = sortRowsByLatestTimestamp(
-  state.inboundRows.filter((row) => {
-    const haystack = [
-      row.autoId,
-      row.timestampIn,
-      row.reason,
-      row.brandIn,
-      row.plateNo,
-      row.prefix,
-      row.firstName,
-      row.lastName,
-      row.driverFullName,
-      row.driverCompany,
-      row.phone
-    ]
-      .map(normalizeForSearch)
-      .join(" ");
+      state.inboundRows.filter((row) => {
+        const haystack = [
+          row.autoId,
+          row.timestampIn,
+          row.reason,
+          row.brandIn,
+          row.plateNo,
+          row.prefix,
+          row.firstName,
+          row.lastName,
+          row.driverFullName,
+          row.driverCompany,
+          row.phone
+        ]
+          .map(normalizeForSearch)
+          .join(" ");
 
-    return haystack.includes(q);
-  })
-);
+        return haystack.includes(q);
+      })
+    );
+  }
+
+
+  /* =========================
+   * SORT HELPERS
+   * ========================= */
+
+  function sortRowsByLatestTimestamp(rows) {
+    return Array.from(rows || []).sort((a, b) => {
+      const ta = parseDisplayDateTimeToMs(a.timestampIn);
+      const tb = parseDisplayDateTimeToMs(b.timestampIn);
+
+      return tb - ta;
+    });
+  }
+
+  function parseDisplayDateTimeToMs(value) {
+    const text = String(value || "").trim();
+
+    if (!text) return 0;
+
+    const m = text.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/
+    );
+
+    if (m) {
+      const dd = Number(m[1]);
+      const mm = Number(m[2]) - 1;
+      const yyyy = Number(m[3]);
+      const hh = Number(m[4] || 0);
+      const mi = Number(m[5] || 0);
+      const ss = Number(m[6] || 0);
+
+      const d = new Date(yyyy, mm, dd, hh, mi, ss);
+      return isNaN(d.getTime()) ? 0 : d.getTime();
+    }
+
+    const d = new Date(text);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+  }
+
 
   /* =========================
    * RENDER LIST
    * ========================= */
-function sortRowsByLatestTimestamp(rows) {
-  return Array.from(rows || []).sort((a, b) => {
-    const ta = parseDisplayDateTimeToMs(a.timestampIn);
-    const tb = parseDisplayDateTimeToMs(b.timestampIn);
 
-    return tb - ta;
-  });
-}
-
-function parseDisplayDateTimeToMs(value) {
-  const text = String(value || "").trim();
-
-  if (!text) return 0;
-
-  const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-
-  if (m) {
-    const dd = Number(m[1]);
-    const mm = Number(m[2]) - 1;
-    const yyyy = Number(m[3]);
-    const hh = Number(m[4] || 0);
-    const mi = Number(m[5] || 0);
-    const ss = Number(m[6] || 0);
-
-    const d = new Date(yyyy, mm, dd, hh, mi, ss);
-    return isNaN(d.getTime()) ? 0 : d.getTime();
-  }
-
-  const d = new Date(text);
-  return isNaN(d.getTime()) ? 0 : d.getTime();
-}
   function renderInboundRows(rows) {
     if (!els.inboundList) return;
 
