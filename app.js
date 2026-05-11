@@ -28,8 +28,9 @@
   const STORAGE_KEY_USER = "PALLET_OUT_CURRENT_USER";
   const STORAGE_KEY_LOGIN_AT = "PALLET_OUT_LOGIN_AT";
 
-  const ECD_REGEX = /^[A-Za-z0-9]+$/;
-  const DEFAULT_PALLET_QTY = [10, 20, 30, 40, 50, 60, 80, 100];
+ const ECD_REGEX = /^[A-Za-z0-9]+$/;
+const TCR_REGEX = /^[A-Za-z0-9]+$/;
+const DEFAULT_PALLET_QTY = [10, 20, 30, 40, 50, 60, 80, 100];
 
   const state = {
     currentUser: "",
@@ -649,9 +650,23 @@ state.filteredRows = state.inboundRows.slice();
         </section>
 
         <section class="dialogSection">
-          <h3>ข้อมูลขาออก</h3>
+  <div class="dialogSectionHeader">
+    <h3>ข้อมูลขาออก</h3>
 
-          <div id="dialogNotice" class="dialogNotice isHidden"></div>
+    <div class="manageWrap">
+      <button id="manageDataBtn" type="button" class="manageDataBtn">
+        จัดการข้อมูล
+      </button>
+
+      <div id="manageMenu" class="manageMenu isHidden">
+        <button id="suppressInboundBtn" type="button" class="manageMenuBtn danger">
+          ซ่อนรายการนี้
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dialogNotice" class="dialogNotice isHidden"></div>
 
           <div class="fieldGroup">
             <label>เลือกยี่ห้อพาเลทขาออก <em>*</em></label>
@@ -678,21 +693,37 @@ state.filteredRows = state.inboundRows.slice();
             >
           </div>
 
-          <div class="fieldGroup">
-            <label for="ecdNameInput">หมายเลขเอกสาร ECD <em>*</em></label>
-            <input
-              id="ecdNameInput"
-              class="dialogInput"
-              type="text"
-              inputmode="latin"
-              autocomplete="off"
-              placeholder="เช่น ECD001 หรือ DOC123"
-              maxlength="30"
-            >
-            <div class="helpText">
-              หมายเลขเอกสารใช้ได้เฉพาะ A-Z, a-z, 0-9 ห้ามเว้นวรรคและห้ามอักขระพิเศษ
-            </div>
-          </div>
+          <div class="docPairGrid">
+  <div class="fieldGroup">
+    <label for="ecdNameInput">หมายเลขเอกสาร ECD <em>*</em></label>
+    <input
+      id="ecdNameInput"
+      class="dialogInput"
+      type="text"
+      inputmode="latin"
+      autocomplete="off"
+      placeholder="ECD001"
+      maxlength="30"
+    >
+  </div>
+
+  <div class="fieldGroup">
+    <label for="tcrNoInput">หมายเลขเอกสาร TCR <em>*</em></label>
+    <input
+      id="tcrNoInput"
+      class="dialogInput"
+      type="text"
+      inputmode="latin"
+      autocomplete="off"
+      placeholder="TCR001"
+      maxlength="30"
+    >
+  </div>
+</div>
+
+<div class="helpText">
+  ECD/TCR ใช้ได้เฉพาะ A-Z, a-z, 0-9 ห้ามเว้นวรรคและห้ามอักขระพิเศษ
+</div>
 
           <div class="fieldGroup">
             <label>รูปหลักฐาน <em>*</em></label>
@@ -813,11 +844,17 @@ state.filteredRows = state.inboundRows.slice();
     const brandButtons = document.querySelectorAll(".brandOption");
     const qtyButtons = document.querySelectorAll(".qtyChip");
     const customQtyInput = $("customQtyInput");
-    const ecdNameInput = $("ecdNameInput");
-    const openCameraBtn = $("openCameraBtn");
-    const captureCameraBtn = $("captureCameraBtn");
-    const closeCameraBtn = $("closeCameraBtn");
-    const pickGalleryBtn = $("pickGalleryBtn");
+const ecdNameInput = $("ecdNameInput");
+const tcrNoInput = $("tcrNoInput");
+
+const manageDataBtn = $("manageDataBtn");
+const manageMenu = $("manageMenu");
+const suppressInboundBtn = $("suppressInboundBtn");
+
+const openCameraBtn = $("openCameraBtn");
+const captureCameraBtn = $("captureCameraBtn");
+const closeCameraBtn = $("closeCameraBtn");
+const pickGalleryBtn = $("pickGalleryBtn");
 
     brandButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -864,7 +901,26 @@ state.filteredRows = state.inboundRows.slice();
         clearDialogNotice();
       });
     }
+   if (tcrNoInput) {
+  tcrNoInput.addEventListener("input", () => {
+    tcrNoInput.value = tcrNoInput.value
+      .replace(/[^A-Za-z0-9]/g, "")
+      .toUpperCase();
 
+    clearDialogNotice();
+  });
+}
+    if (manageDataBtn && manageMenu) {
+  manageDataBtn.addEventListener("click", () => {
+    manageMenu.classList.toggle("isHidden");
+  });
+}
+
+if (suppressInboundBtn) {
+  suppressInboundBtn.addEventListener("click", async () => {
+    await handleSuppressInbound(row);
+  });
+}
     if (openCameraBtn) {
       openCameraBtn.addEventListener("click", async () => {
         await openInlineCamera();
@@ -900,8 +956,9 @@ state.filteredRows = state.inboundRows.slice();
 
   async function collectAndValidateDialogData(row) {
     const customQtyInput = $("customQtyInput");
-    const ecdNameInput = $("ecdNameInput");
-    const noteInput = $("noteInput");
+const ecdNameInput = $("ecdNameInput");
+const tcrNoInput = $("tcrNoInput");
+const noteInput = $("noteInput");
 
     const brandOut = String(state.selectedBrand || "").trim().toUpperCase();
 
@@ -935,6 +992,18 @@ state.filteredRows = state.inboundRows.slice();
       throw new Error("หมายเลขเอกสาร ECD กรอกได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
     }
 
+    const tcrNo = String(tcrNoInput ? tcrNoInput.value || "" : "")
+  .trim()
+  .toUpperCase();
+
+if (!tcrNo) {
+  throw new Error("กรุณากรอกหมายเลขเอกสาร TCR");
+}
+
+if (!TCR_REGEX.test(tcrNo)) {
+  throw new Error("หมายเลขเอกสาร TCR กรอกได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
+}
+    
     if (state.selectedEvidenceFiles.length < CONFIG.MIN_IMAGES) {
       throw new Error("กรุณาแนบรูปหลักฐานอย่างน้อย 1 รูป");
     }
@@ -954,13 +1023,14 @@ state.filteredRows = state.inboundRows.slice();
 
     clearDialogNotice();
 
-    return {
+  return {
   autoId: row.autoId,
   plateNo: row.plateNo || "",
   driverFullName: row.driverFullName || joinName(row) || "",
   brandOut,
   qtyOut,
   ecdName,
+  tcrNo,
   recordedBy: state.currentUser,
   note: String(noteInput ? noteInput.value || "" : "").trim(),
   images: state.selectedEvidencePayloads
@@ -1324,6 +1394,107 @@ state.filteredRows = state.inboundRows.slice();
   }
 
   /* =========================
+ * MANAGE / SUPPRESS INBOUND
+ * ========================= */
+
+async function handleSuppressInbound(row) {
+  if (!row || !row.autoId) {
+    showDialogNotice("ไม่พบ Auto ID ของรายการนี้", "error");
+    return;
+  }
+
+  const confirm = await Swal.fire({
+    icon: "warning",
+    title: "ซ่อนรายการนี้?",
+    html: `
+      <div class="confirmBox">
+        <div><span>Auto ID</span><strong>${escapeHtml(row.autoId || "-")}</strong></div>
+        <div><span>ทะเบียนรถ</span><strong>${escapeHtml(row.plateNo || "-")}</strong></div>
+        <div><span>พขร.</span><strong>${escapeHtml(row.driverFullName || joinName(row) || "-")}</strong></div>
+      </div>
+
+      <div class="confirmNote">
+        รายการนี้จะไม่แสดงในฟอร์มขาออกอีก แต่ข้อมูลในชีทขาเข้าจะไม่ถูกแก้ไข
+      </div>
+    `,
+    input: "textarea",
+    inputLabel: "เหตุผลการซ่อนรายการ",
+    inputPlaceholder: "เช่น คนขับกดเข้าผิด / ไม่ได้มารับพาเลท / รายการซ้ำ",
+    inputAttributes: {
+      maxlength: 250
+    },
+    showCancelButton: true,
+    confirmButtonText: "ยืนยันซ่อน",
+    cancelButtonText: "ยกเลิก",
+    reverseButtons: true,
+    inputValidator: (value) => {
+      if (!String(value || "").trim()) {
+        return "กรุณาระบุเหตุผลการซ่อนรายการ";
+      }
+      return null;
+    }
+  });
+
+  if (!confirm.isConfirmed) return;
+
+  const reason = String(confirm.value || "").trim();
+
+  try {
+    Swal.fire({
+      title: "กำลังซ่อนรายการ",
+      html: "กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูลการซ่อนรายการ",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    const res = await apiPost("/api/suppress-inbound", {
+      autoId: row.autoId,
+      suppressedBy: state.currentUser,
+      recordedBy: state.currentUser,
+      reason
+    }, 60000);
+
+    if (!res.ok) {
+      throw new Error(res.message || "ซ่อนรายการไม่สำเร็จ");
+    }
+
+    removeInboundRowFromState(row.autoId);
+
+    await Swal.fire({
+      icon: "success",
+      title: "ซ่อนรายการสำเร็จ",
+      html: `
+        <div class="successSummary">
+          <div><span>Auto ID</span><strong>${escapeHtml(res.autoId || row.autoId || "-")}</strong></div>
+          <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || row.plateNo || "-")}</strong></div>
+          <div><span>ผู้ซ่อน</span><strong>${escapeHtml(res.suppressedBy || state.currentUser || "-")}</strong></div>
+          <div><span>เวลา</span><strong>${escapeHtml(res.suppressedAt || "-")}</strong></div>
+        </div>
+      `,
+      confirmButtonText: "ตกลง"
+    });
+
+  } catch (err) {
+    await showError(err);
+  }
+}
+
+
+function removeInboundRowFromState(autoId) {
+  const target = String(autoId || "").trim();
+
+  if (!target) return;
+
+  state.inboundRows = state.inboundRows.filter((r) => String(r.autoId || "").trim() !== target);
+  state.filteredRows = state.filteredRows.filter((r) => String(r.autoId || "").trim() !== target);
+
+  renderInboundRows(state.filteredRows);
+  updateSummary();
+}
+  /* =========================
    * SUBMIT
    * ========================= */
 
@@ -1351,15 +1522,17 @@ state.filteredRows = state.inboundRows.slice();
   icon: "success",
   title: "บันทึกสำเร็จ",
   html: `
-    <div class="successSummary">
-      <div><span>Outbound ID</span><strong>${escapeHtml(res.outboundId || "-")}</strong></div>
-      <div><span>Auto ID</span><strong>${escapeHtml(res.autoId || "-")}</strong></div>
-      <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || payload.plateNo || "-")}</strong></div>
-      <div><span>พขร.</span><strong>${escapeHtml(res.driverFullName || payload.driverFullName || "-")}</strong></div>
-      <div><span>เวลาออก</span><strong>${escapeHtml(res.timestampOut || "-")}</strong></div>
-      <div><span>Duration</span><strong>${escapeHtml(res.duration || "-")}</strong></div>
-    </div>
-  `,
+  <div class="successSummary">
+    <div><span>Outbound ID</span><strong>${escapeHtml(res.outboundId || "-")}</strong></div>
+    <div><span>Auto ID</span><strong>${escapeHtml(res.autoId || "-")}</strong></div>
+    <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || payload.plateNo || "-")}</strong></div>
+    <div><span>พขร.</span><strong>${escapeHtml(res.driverFullName || payload.driverFullName || "-")}</strong></div>
+    <div><span>ECD</span><strong>${escapeHtml(res.ecdName || payload.ecdName || "-")}</strong></div>
+    <div><span>TCR</span><strong>${escapeHtml(res.tcrNo || payload.tcrNo || "-")}</strong></div>
+    <div><span>เวลาออก</span><strong>${escapeHtml(res.timestampOut || "-")}</strong></div>
+    <div><span>Duration</span><strong>${escapeHtml(res.duration || "-")}</strong></div>
+  </div>
+`,
   confirmButtonText: "ตกลง"
 });
 
