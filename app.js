@@ -363,8 +363,8 @@
         throw new Error(res.message || "โหลดรายการขาเข้าไม่สำเร็จ");
       }
 
-      state.inboundRows = Array.isArray(res.rows) ? res.rows : [];
-      state.filteredRows = state.inboundRows.slice();
+     state.inboundRows = sortRowsByLatestTimestamp(Array.isArray(res.rows) ? res.rows : []);
+state.filteredRows = state.inboundRows.slice();
 
       if (els.searchInput) {
         const q = String(els.searchInput.value || "").trim();
@@ -402,31 +402,62 @@
       return;
     }
 
-    state.filteredRows = state.inboundRows.filter((row) => {
-      const haystack = [
-        row.autoId,
-        row.timestampIn,
-        row.reason,
-        row.brandIn,
-        row.plateNo,
-        row.prefix,
-        row.firstName,
-        row.lastName,
-        row.driverFullName,
-        row.driverCompany,
-        row.phone
-      ]
-        .map(normalizeForSearch)
-        .join(" ");
+    state.filteredRows = sortRowsByLatestTimestamp(
+  state.inboundRows.filter((row) => {
+    const haystack = [
+      row.autoId,
+      row.timestampIn,
+      row.reason,
+      row.brandIn,
+      row.plateNo,
+      row.prefix,
+      row.firstName,
+      row.lastName,
+      row.driverFullName,
+      row.driverCompany,
+      row.phone
+    ]
+      .map(normalizeForSearch)
+      .join(" ");
 
-      return haystack.includes(q);
-    });
-  }
+    return haystack.includes(q);
+  })
+);
 
   /* =========================
    * RENDER LIST
    * ========================= */
+function sortRowsByLatestTimestamp(rows) {
+  return Array.from(rows || []).sort((a, b) => {
+    const ta = parseDisplayDateTimeToMs(a.timestampIn);
+    const tb = parseDisplayDateTimeToMs(b.timestampIn);
 
+    return tb - ta;
+  });
+}
+
+function parseDisplayDateTimeToMs(value) {
+  const text = String(value || "").trim();
+
+  if (!text) return 0;
+
+  const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+
+  if (m) {
+    const dd = Number(m[1]);
+    const mm = Number(m[2]) - 1;
+    const yyyy = Number(m[3]);
+    const hh = Number(m[4] || 0);
+    const mi = Number(m[5] || 0);
+    const ss = Number(m[6] || 0);
+
+    const d = new Date(yyyy, mm, dd, hh, mi, ss);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+  }
+
+  const d = new Date(text);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
+}
   function renderInboundRows(rows) {
     if (!els.inboundList) return;
 
@@ -908,14 +939,16 @@
     clearDialogNotice();
 
     return {
-      autoId: row.autoId,
-      brandOut,
-      qtyOut,
-      ecdName,
-      recordedBy: state.currentUser,
-      note: String(noteInput ? noteInput.value || "" : "").trim(),
-      images: state.selectedEvidencePayloads
-    };
+  autoId: row.autoId,
+  plateNo: row.plateNo || "",
+  driverFullName: row.driverFullName || joinName(row) || "",
+  brandOut,
+  qtyOut,
+  ecdName,
+  recordedBy: state.currentUser,
+  note: String(noteInput ? noteInput.value || "" : "").trim(),
+  images: state.selectedEvidencePayloads
+};
   }
 
   /* =========================
@@ -1299,18 +1332,20 @@
       }
 
       await Swal.fire({
-        icon: "success",
-        title: "บันทึกสำเร็จ",
-        html: `
-          <div class="successSummary">
-            <div><span>Outbound ID</span><strong>${escapeHtml(res.outboundId || "-")}</strong></div>
-            <div><span>Auto ID</span><strong>${escapeHtml(res.autoId || "-")}</strong></div>
-            <div><span>เวลาออก</span><strong>${escapeHtml(res.timestampOut || "-")}</strong></div>
-            <div><span>Duration</span><strong>${escapeHtml(res.duration || "-")}</strong></div>
-          </div>
-        `,
-        confirmButtonText: "ตกลง"
-      });
+  icon: "success",
+  title: "บันทึกสำเร็จ",
+  html: `
+    <div class="successSummary">
+      <div><span>Outbound ID</span><strong>${escapeHtml(res.outboundId || "-")}</strong></div>
+      <div><span>Auto ID</span><strong>${escapeHtml(res.autoId || "-")}</strong></div>
+      <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || payload.plateNo || "-")}</strong></div>
+      <div><span>พขร.</span><strong>${escapeHtml(res.driverFullName || payload.driverFullName || "-")}</strong></div>
+      <div><span>เวลาออก</span><strong>${escapeHtml(res.timestampOut || "-")}</strong></div>
+      <div><span>Duration</span><strong>${escapeHtml(res.duration || "-")}</strong></div>
+    </div>
+  `,
+  confirmButtonText: "ตกลง"
+});
 
       await loadInboundRows(true);
 
