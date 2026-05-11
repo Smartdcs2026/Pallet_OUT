@@ -29,7 +29,6 @@
   const STORAGE_KEY_LOGIN_AT = "PALLET_OUT_LOGIN_AT";
 
   const ECD_REGEX = /^[A-Za-z0-9]+$/;
-
   const DEFAULT_PALLET_QTY = [10, 20, 30, 40, 50, 60, 80, 100];
 
   const state = {
@@ -46,6 +45,8 @@
     selectedQty: "",
     isSubmitting: false
   };
+
+  let inlineCameraStream = null;
 
   /* =========================
    * DOM
@@ -86,31 +87,31 @@
   document.addEventListener("DOMContentLoaded", init);
 
   function init() {
-  bindEvents();
+    bindEvents();
 
-  const savedUser = sessionStorage.getItem(STORAGE_KEY_USER) || "";
+    const savedUser = sessionStorage.getItem(STORAGE_KEY_USER) || "";
 
-  if (savedUser) {
-    state.currentUser = savedUser;
-    showMainView(savedUser);
-    loadInitialData();
-    return;
+    if (savedUser) {
+      state.currentUser = savedUser;
+      showMainView(savedUser);
+      loadInitialData();
+      return;
+    }
+
+    showLoginView();
+
+    const passFromUrl = getPassFromUrl();
+
+    if (passFromUrl && els.passInput) {
+      els.passInput.value = passFromUrl;
+
+      setTimeout(() => {
+        if (els.loginForm) {
+          els.loginForm.requestSubmit();
+        }
+      }, 300);
+    }
   }
-
-  showLoginView();
-
-  const passFromUrl = getPassFromUrl();
-
-  if (passFromUrl && els.passInput) {
-    els.passInput.value = passFromUrl;
-
-    setTimeout(() => {
-      if (els.loginForm) {
-        els.loginForm.requestSubmit();
-      }
-    }, 300);
-  }
-}
 
   function bindEvents() {
     if (els.loginForm) {
@@ -297,6 +298,7 @@
     state.filteredRows = [];
     state.options = { brands: [], palletQty: [] };
 
+    stopInlineCamera();
     renderInboundRows([]);
     updateSummary();
 
@@ -544,11 +546,14 @@
       didOpen: () => {
         initDialogEvents(row);
       },
+      willClose: () => {
+        stopInlineCamera();
+      },
       preConfirm: async () => {
         try {
           return await collectAndValidateDialogData(row);
         } catch (err) {
-          Swal.showValidationMessage(err.message || String(err));
+          showDialogNotice(err.message || String(err), "error");
           return false;
         }
       }
@@ -565,6 +570,8 @@
     state.selectedBrand = "";
     state.selectedQty = "";
     state.isSubmitting = false;
+
+    stopInlineCamera();
 
     if (els.cameraInput) {
       els.cameraInput.value = "";
@@ -598,6 +605,8 @@
 
         <section class="dialogSection">
           <h3>ข้อมูลขาออก</h3>
+
+          <div id="dialogNotice" class="dialogNotice isHidden"></div>
 
           <div class="fieldGroup">
             <label>เลือกยี่ห้อพาเลทขาออก <em>*</em></label>
@@ -655,6 +664,32 @@
               <span id="evidenceCountText" class="evidenceCount">
                 ยังไม่ได้เลือกรูป
               </span>
+            </div>
+
+            <div id="inlineCameraPanel" class="inlineCameraPanel isHidden">
+              <video
+                id="inlineCameraVideo"
+                class="inlineCameraVideo"
+                autoplay
+                playsinline
+                muted
+              ></video>
+
+              <canvas id="inlineCameraCanvas" class="inlineCameraCanvas"></canvas>
+
+              <div class="inlineCameraActions">
+                <button id="captureCameraBtn" type="button" class="primaryBtn">
+                  ถ่ายภาพ
+                </button>
+
+                <button id="closeCameraBtn" type="button" class="secondaryBtn">
+                  ปิดกล้อง
+                </button>
+              </div>
+
+              <div class="helpText">
+                จัดภาพให้ชัดเจน แล้วกด “ถ่ายภาพ” รูปจะถูกเพิ่มในรายการด้านล่าง
+              </div>
             </div>
 
             <div class="helpText">ต้องมีอย่างน้อย 1 รูป และสูงสุด 4 รูป</div>
@@ -733,6 +768,8 @@
     const customQtyInput = $("customQtyInput");
     const ecdNameInput = $("ecdNameInput");
     const openCameraBtn = $("openCameraBtn");
+    const captureCameraBtn = $("captureCameraBtn");
+    const closeCameraBtn = $("closeCameraBtn");
     const pickGalleryBtn = $("pickGalleryBtn");
 
     brandButtons.forEach((btn) => {
@@ -740,6 +777,7 @@
         brandButtons.forEach((b) => b.classList.remove("isSelected"));
         btn.classList.add("isSelected");
         state.selectedBrand = String(btn.dataset.brand || "").trim().toUpperCase();
+        clearDialogNotice();
       });
     });
 
@@ -765,6 +803,8 @@
             customQtyInput.value = "";
           }
         }
+
+        clearDialogNotice();
       });
     });
 
@@ -773,31 +813,40 @@
         ecdNameInput.value = ecdNameInput.value
           .replace(/[^A-Za-z0-9]/g, "")
           .toUpperCase();
+
+        clearDialogNotice();
       });
     }
 
     if (openCameraBtn) {
-  openCameraBtn.addEventListener("click", async () => {
-    await openLiveCameraDialog();
-  });
-}
-
-    if (pickGalleryBtn) {
-  pickGalleryBtn.addEventListener("click", () => {
-    if (!els.uploadInput) {
-      Swal.fire({
-        icon: "error",
-        title: "ไม่พบช่องเลือกรูป",
-        text: "กรุณาตรวจสอบ index.html ว่ามี input id=\"uploadInput\" แล้วหรือไม่",
-        confirmButtonText: "ตกลง"
+      openCameraBtn.addEventListener("click", async () => {
+        await openInlineCamera();
       });
-      return;
     }
 
-    els.uploadInput.value = "";
-    els.uploadInput.click();
-  });
-}
+    if (captureCameraBtn) {
+      captureCameraBtn.addEventListener("click", async () => {
+        await captureInlineCameraImage();
+      });
+    }
+
+    if (closeCameraBtn) {
+      closeCameraBtn.addEventListener("click", () => {
+        stopInlineCamera();
+      });
+    }
+
+    if (pickGalleryBtn) {
+      pickGalleryBtn.addEventListener("click", () => {
+        if (!els.uploadInput) {
+          showDialogNotice("ไม่พบช่องเลือกรูป กรุณาตรวจสอบ index.html ว่ามี input id=\"uploadInput\"", "error");
+          return;
+        }
+
+        els.uploadInput.value = "";
+        els.uploadInput.click();
+      });
+    }
 
     updateEvidencePreview();
   }
@@ -848,13 +897,15 @@
     }
 
     if (!state.selectedEvidencePayloads.length) {
-      Swal.showValidationMessage("กำลังเตรียมรูปภาพ กรุณารอสักครู่...");
+      showDialogNotice("กำลังเตรียมรูปภาพ กรุณารอสักครู่...", "info");
       state.selectedEvidencePayloads = await compressSelectedImages(state.selectedEvidenceFiles);
     }
 
     if (state.selectedEvidencePayloads.length < CONFIG.MIN_IMAGES) {
       throw new Error("ไม่สามารถเตรียมข้อมูลรูปภาพได้ กรุณาเลือกรูปใหม่");
     }
+
+    clearDialogNotice();
 
     return {
       autoId: row.autoId,
@@ -871,227 +922,188 @@
    * EVIDENCE IMAGES
    * ========================= */
 
-async function addEvidenceFiles(files) {
-  const imageFiles = Array.from(files || []).filter((file) => {
-    return file && file.type && file.type.indexOf("image/") === 0;
-  });
-
-  if (!imageFiles.length) {
-    await Swal.fire({
-      icon: "warning",
-      title: "ไฟล์ไม่ถูกต้อง",
-      text: "กรุณาเลือกเฉพาะไฟล์รูปภาพ",
-      confirmButtonText: "ตกลง"
-    });
-    return;
+  async function handleEvidenceInputChange(e) {
+    const files = Array.from(e.target.files || []);
+    await addEvidenceFiles(files);
   }
 
-  const remaining = CONFIG.MAX_IMAGES - state.selectedEvidenceFiles.length;
-
-  if (remaining <= 0) {
-    await Swal.fire({
-      icon: "warning",
-      title: "รูปครบจำนวนแล้ว",
-      text: "แนบรูปหลักฐานได้สูงสุด " + CONFIG.MAX_IMAGES + " รูปเท่านั้น",
-      confirmButtonText: "ตกลง"
+  async function addEvidenceFiles(files) {
+    const imageFiles = Array.from(files || []).filter((file) => {
+      return file && file.type && file.type.indexOf("image/") === 0;
     });
-    return;
-  }
 
-  let filesToAdd = imageFiles;
+    if (!imageFiles.length) {
+      showDialogNotice("กรุณาเลือกเฉพาะไฟล์รูปภาพ", "error");
+      return;
+    }
 
-  if (imageFiles.length > remaining) {
-    filesToAdd = imageFiles.slice(0, remaining);
+    const remaining = CONFIG.MAX_IMAGES - state.selectedEvidenceFiles.length;
 
-    await Swal.fire({
-      icon: "warning",
-      title: "รูปเกินจำนวน",
-      text: "ระบบจะรับเพิ่มได้อีก " + remaining + " รูป รวมสูงสุด " + CONFIG.MAX_IMAGES + " รูป",
-      confirmButtonText: "ตกลง"
-    });
-  }
+    if (remaining <= 0) {
+      showDialogNotice("แนบรูปหลักฐานได้สูงสุด " + CONFIG.MAX_IMAGES + " รูปเท่านั้น", "warning");
+      return;
+    }
 
-  state.selectedEvidenceFiles = state.selectedEvidenceFiles.concat(filesToAdd);
-  state.selectedEvidencePayloads = [];
+    let filesToAdd = imageFiles;
 
-  updateEvidencePreview();
+    if (imageFiles.length > remaining) {
+      filesToAdd = imageFiles.slice(0, remaining);
+      showDialogNotice("ระบบรับเพิ่มได้อีก " + remaining + " รูป รวมสูงสุด " + CONFIG.MAX_IMAGES + " รูป", "warning");
+    } else {
+      clearDialogNotice();
+    }
 
-  try {
-    const countText = $("evidenceCountText");
-    if (countText) countText.textContent = "กำลังเตรียมรูปภาพ...";
-
-    state.selectedEvidencePayloads = await compressSelectedImages(state.selectedEvidenceFiles);
+    state.selectedEvidenceFiles = state.selectedEvidenceFiles.concat(filesToAdd);
+    state.selectedEvidencePayloads = [];
 
     updateEvidencePreview();
 
-  } catch (err) {
-    await showError(err);
+    try {
+      const countText = $("evidenceCountText");
+      if (countText) countText.textContent = "กำลังเตรียมรูปภาพ...";
+
+      state.selectedEvidencePayloads = await compressSelectedImages(state.selectedEvidenceFiles);
+
+      updateEvidencePreview();
+
+    } catch (err) {
+      showDialogNotice(err.message || String(err), "error");
+    }
   }
-}
 
-
-async function openLiveCameraDialog() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    await Swal.fire({
-      icon: "warning",
-      title: "เบราว์เซอร์ไม่รองรับกล้องสด",
-      text: "ระบบจะเปิดเมนูถ่ายภาพ/เลือกรูปของอุปกรณ์แทน",
-      confirmButtonText: "ตกลง"
-    });
-
-    if (els.cameraInput) {
-      els.cameraInput.value = "";
-      els.cameraInput.click();
+  async function openInlineCamera() {
+    if (state.selectedEvidenceFiles.length >= CONFIG.MAX_IMAGES) {
+      showDialogNotice("แนบรูปหลักฐานได้สูงสุด " + CONFIG.MAX_IMAGES + " รูปเท่านั้น", "warning");
+      return;
     }
 
-    return;
-  }
+    const panel = $("inlineCameraPanel");
+    const video = $("inlineCameraVideo");
 
-  if (state.selectedEvidenceFiles.length >= CONFIG.MAX_IMAGES) {
-    await Swal.fire({
-      icon: "warning",
-      title: "รูปครบจำนวนแล้ว",
-      text: "แนบรูปหลักฐานได้สูงสุด " + CONFIG.MAX_IMAGES + " รูปเท่านั้น",
-      confirmButtonText: "ตกลง"
-    });
-    return;
-  }
+    if (!panel || !video) {
+      showDialogNotice("ไม่พบพื้นที่กล้อง กรุณาตรวจสอบ HTML ของฟอร์มรูปหลักฐาน", "error");
+      return;
+    }
 
-  let stream = null;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showDialogNotice("เบราว์เซอร์ไม่รองรับกล้องสด ระบบจะเปิดกล้อง/เลือกรูปแบบพื้นฐานของเครื่องแทน", "warning");
 
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: "environment" },
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      },
-      audio: false
-    });
-
-    const html = `
-      <div class="cameraDialog">
-        <video id="liveCameraVideo" class="liveCameraVideo" autoplay playsinline muted></video>
-        <canvas id="liveCameraCanvas" class="liveCameraCanvas"></canvas>
-
-        <div class="cameraHint">
-          จัดภาพให้ชัดเจน แล้วกด “ถ่ายภาพ”
-        </div>
-      </div>
-    `;
-
-    const result = await Swal.fire({
-      title: "เปิดกล้องถ่ายรูปหลักฐาน",
-      html,
-      width: 720,
-      showCancelButton: true,
-      confirmButtonText: "ถ่ายภาพ",
-      cancelButtonText: "ยกเลิก",
-      reverseButtons: true,
-      allowOutsideClick: false,
-      didOpen: () => {
-        const video = document.getElementById("liveCameraVideo");
-        if (video) {
-          video.srcObject = stream;
-          video.play().catch(() => {});
-        }
-      },
-      preConfirm: () => {
-        const video = document.getElementById("liveCameraVideo");
-        const canvas = document.getElementById("liveCameraCanvas");
-
-        if (!video || !canvas) {
-          Swal.showValidationMessage("ไม่พบวิดีโอกล้อง");
-          return false;
-        }
-
-        const width = video.videoWidth || 1280;
-        const height = video.videoHeight || 720;
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(video, 0, 0, width, height);
-
-        const dataUrl = canvas.toDataURL(CONFIG.IMAGE_OUTPUT_TYPE || "image/jpeg", CONFIG.IMAGE_QUALITY || 0.78);
-
-        return dataUrl;
-      },
-      willClose: () => {
-        stopMediaStream(stream);
+      if (els.cameraInput) {
+        els.cameraInput.value = "";
+        els.cameraInput.click();
       }
-    });
 
-    stopMediaStream(stream);
+      return;
+    }
 
-    if (!result.isConfirmed || !result.value) return;
+    try {
+      stopInlineCamera();
+
+      inlineCameraStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      });
+
+      video.srcObject = inlineCameraStream;
+      panel.classList.remove("isHidden");
+
+      await video.play();
+
+      showDialogNotice("เปิดกล้องแล้ว จัดภาพให้ชัดเจนแล้วกดถ่ายภาพ", "info");
+
+    } catch (err) {
+      stopInlineCamera();
+
+      showDialogNotice("เปิดกล้องสดไม่ได้ ระบบจะเปิดเมนูถ่ายภาพ/เลือกรูปแบบพื้นฐานของเครื่องแทน", "warning");
+
+      if (els.cameraInput) {
+        els.cameraInput.value = "";
+        els.cameraInput.click();
+      }
+    }
+  }
+
+  async function captureInlineCameraImage() {
+    const video = $("inlineCameraVideo");
+    const canvas = $("inlineCameraCanvas");
+
+    if (!video || !canvas) {
+      showDialogNotice("ไม่พบกล้อง กรุณาเปิดกล้องใหม่อีกครั้ง", "error");
+      return;
+    }
+
+    if (!inlineCameraStream) {
+      showDialogNotice("กรุณากดเปิดกล้องก่อนถ่ายภาพ", "warning");
+      return;
+    }
+
+    if (state.selectedEvidenceFiles.length >= CONFIG.MAX_IMAGES) {
+      showDialogNotice("แนบรูปหลักฐานได้สูงสุด " + CONFIG.MAX_IMAGES + " รูปเท่านั้น", "warning");
+      stopInlineCamera();
+      return;
+    }
+
+    const width = video.videoWidth || 1280;
+    const height = video.videoHeight || 720;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, width, height);
+
+    const mimeType = CONFIG.IMAGE_OUTPUT_TYPE || "image/jpeg";
+    const quality = Number(CONFIG.IMAGE_QUALITY || 0.78);
+    const dataUrl = canvas.toDataURL(mimeType, quality);
 
     const file = dataUrlToFile(
-      result.value,
+      dataUrl,
       "camera_" + getNowDisplay().replace(/[\/:\s]/g, "") + ".jpg"
     );
 
     await addEvidenceFiles([file]);
 
-  } catch (err) {
-    stopMediaStream(stream);
+    showDialogNotice("ถ่ายภาพแล้ว รูปถูกเพิ่มในรายการด้านล่าง", "success");
 
-    await Swal.fire({
-      icon: "warning",
-      title: "เปิดกล้องไม่ได้",
-      html: `
-        <div style="text-align:left">
-          <div>เบราว์เซอร์หรืออุปกรณ์อาจไม่อนุญาตให้เปิดกล้องสด</div>
-          <div style="margin-top:8px;color:#64748b;font-size:0.92rem">
-            ระบบจะเปิดกล้อง/เลือกรูปแบบพื้นฐานของเครื่องแทน
-          </div>
-        </div>
-      `,
-      confirmButtonText: "ตกลง"
-    });
-
-    if (els.cameraInput) {
-      els.cameraInput.value = "";
-      els.cameraInput.click();
+    if (state.selectedEvidenceFiles.length >= CONFIG.MAX_IMAGES) {
+      stopInlineCamera();
     }
   }
-}
 
-
-function stopMediaStream(stream) {
-  if (!stream) return;
-
-  stream.getTracks().forEach((track) => {
-    try {
-      track.stop();
-    } catch (err) {
-      // ignore
+  function stopInlineCamera() {
+    if (inlineCameraStream) {
+      inlineCameraStream.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (err) {
+          // ignore
+        }
+      });
     }
-  });
-}
 
+    inlineCameraStream = null;
 
-function dataUrlToFile(dataUrl, filename) {
-  const parts = String(dataUrl || "").split(",");
-  const header = parts[0] || "";
-  const data = parts[1] || "";
+    const video = $("inlineCameraVideo");
+    const panel = $("inlineCameraPanel");
 
-  const mimeMatch = header.match(/data:(.*?);base64/);
-  const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+    if (video) {
+      try {
+        video.pause();
+        video.srcObject = null;
+      } catch (err) {
+        // ignore
+      }
+    }
 
-  const binary = atob(data);
-  const length = binary.length;
-  const bytes = new Uint8Array(length);
-
-  for (let i = 0; i < length; i++) {
-    bytes[i] = binary.charCodeAt(i);
+    if (panel) {
+      panel.classList.add("isHidden");
+    }
   }
 
-  return new File([bytes], filename || "camera.jpg", {
-    type: mimeType
-  });
-}
   function updateEvidencePreview() {
     const grid = $("evidencePreviewGrid");
     const countText = $("evidenceCountText");
@@ -1143,6 +1155,7 @@ function dataUrlToFile(dataUrl, filename) {
         })
         .catch((err) => {
           console.error(err);
+          showDialogNotice(err.message || String(err), "error");
         });
     }
   }
@@ -1238,6 +1251,27 @@ function dataUrlToFile(dataUrl, filename) {
       .slice(0, 40);
 
     return `evidence_${String(index).padStart(2, "0")}_${safeName}.jpg`;
+  }
+
+  function dataUrlToFile(dataUrl, filename) {
+    const parts = String(dataUrl || "").split(",");
+    const header = parts[0] || "";
+    const data = parts[1] || "";
+
+    const mimeMatch = header.match(/data:(.*?);base64/);
+    const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+
+    const binary = atob(data);
+    const length = binary.length;
+    const bytes = new Uint8Array(length);
+
+    for (let i = 0; i < length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    return new File([bytes], filename || "camera.jpg", {
+      type: mimeType
+    });
   }
 
   /* =========================
@@ -1367,10 +1401,7 @@ function dataUrlToFile(dataUrl, filename) {
         clearTimeout(timer);
       });
   }
-function getPassFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  return String(params.get("pass") || "").trim();
-}
+
   /* =========================
    * UTILITIES
    * ========================= */
@@ -1384,6 +1415,34 @@ function getPassFromUrl() {
       text: err && err.message ? err.message : String(err),
       confirmButtonText: "ตกลง"
     });
+  }
+
+  function showDialogNotice(message, type) {
+    const box = $("dialogNotice");
+
+    if (!box) {
+      console.warn(message);
+      return;
+    }
+
+    box.className = "dialogNotice";
+    box.classList.add("dialogNotice-" + (type || "info"));
+    box.textContent = message || "";
+    box.classList.remove("isHidden");
+  }
+
+  function clearDialogNotice() {
+    const box = $("dialogNotice");
+
+    if (!box) return;
+
+    box.textContent = "";
+    box.className = "dialogNotice isHidden";
+  }
+
+  function getPassFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return String(params.get("pass") || "").trim();
   }
 
   function getNowDisplay() {
