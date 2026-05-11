@@ -50,6 +50,7 @@ html {
   width: 100%;
   min-height: 100%;
   -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -115,7 +116,7 @@ img {
   border: 1px solid transparent;
   padding: 10px 16px;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.15;
   transition:
     transform 0.15s ease,
@@ -637,24 +638,38 @@ img {
    SWEETALERT CUSTOM
 ========================= */
 
+.swal2-container {
+  padding: 10px !important;
+}
+
 .swal2-popup {
   font-family: var(--font-main) !important;
   border-radius: 24px !important;
+  width: min(860px, calc(100vw - 20px)) !important;
+  max-height: calc(100dvh - 20px) !important;
+  overflow: hidden !important;
+  padding: 16px !important;
 }
 
 .swal2-title {
-  font-size: 1.28rem !important;
+  font-size: 1.24rem !important;
   font-weight: 900 !important;
   color: var(--text) !important;
+  padding: 0 8px !important;
 }
 
 .swal2-html-container {
-  margin: 0.8em 0 0 !important;
+  margin: 0.75em 0 0 !important;
   color: var(--text) !important;
+  max-height: calc(100dvh - 160px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0 4px 4px !important;
 }
 
 .swal2-actions {
   gap: 8px !important;
+  margin-top: 12px !important;
 }
 
 .swal2-confirm,
@@ -764,6 +779,39 @@ img {
   resize: vertical;
 }
 
+.dialogNotice {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.35;
+  border: 1px solid transparent;
+}
+
+.dialogNotice-info {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.dialogNotice-success {
+  background: var(--success-soft);
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.dialogNotice-warning {
+  background: var(--warning-soft);
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+.dialogNotice-error {
+  background: var(--danger-soft);
+  color: #7f1d1d;
+  border-color: #fecaca;
+}
+
 
 /* =========================
    BRAND SELECT
@@ -772,7 +820,7 @@ img {
 .brandSelectGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .brandOption {
@@ -780,10 +828,10 @@ img {
   display: grid;
   gap: 8px;
   place-items: center;
-  min-height: 132px;
-  padding: 10px;
+  min-height: 168px;
+  padding: 12px;
   border: 2px solid var(--border);
-  border-radius: 18px;
+  border-radius: 20px;
   background: #ffffff;
   color: var(--text);
   transition:
@@ -821,10 +869,10 @@ img {
   display: grid;
   place-items: center;
   width: 100%;
-  height: 74px;
-  border-radius: 14px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  height: 112px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #dbe3ea;
   overflow: hidden;
 }
 
@@ -832,7 +880,7 @@ img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  padding: 6px;
+  padding: 8px;
 }
 
 .brandImageBox span {
@@ -841,7 +889,8 @@ img {
 }
 
 .brandOption strong {
-  font-size: 1rem;
+  font-size: 1.08rem;
+  line-height: 1.1;
   font-weight: 900;
   letter-spacing: 0.03em;
 }
@@ -898,7 +947,7 @@ img {
 
 
 /* =========================
-   EVIDENCE IMAGES
+   EVIDENCE / IMAGE INPUT
 ========================= */
 
 .hiddenFileInput {
@@ -911,14 +960,26 @@ img {
 }
 
 .evidenceControl {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+}
+
+.evidenceControl .secondaryBtn {
+  width: 100%;
+  min-height: 46px;
 }
 
 .evidenceCount {
+  grid-column: 1 / -1;
+  display: block;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   color: var(--muted);
+  text-align: center;
   font-size: 0.88rem;
   font-weight: 800;
 }
@@ -950,15 +1011,65 @@ img {
   right: 5px;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
   border: 0;
-  background: rgba(220, 38, 38, 0.92);
+  background: rgba(220, 38, 38, 0.94);
   color: #ffffff;
   font-size: 1.1rem;
   font-weight: 900;
   line-height: 1;
+}
+
+
+/* =========================
+   INLINE CAMERA
+========================= */
+
+.inlineCameraPanel {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid #99f6e4;
+  background: #f0fdfa;
+}
+
+.inlineCameraVideo {
+  display: block;
+  width: 100%;
+  height: clamp(220px, 48dvh, 520px);
+  max-height: 520px;
+  border-radius: 16px;
+  background: #020617;
+  object-fit: contain;
+  border: 1px solid #dbe3ea;
+}
+
+.inlineCameraCanvas {
+  display: none;
+}
+
+.inlineCameraActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.inlineCameraActions button {
+  width: 100%;
+}
+
+.cameraHint {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-align: center;
+  border: 1px solid #e2e8f0;
 }
 
 
@@ -999,7 +1110,7 @@ img {
 
 
 /* =========================
-   RESPONSIVE
+   RESPONSIVE TABLET
 ========================= */
 
 @media (max-width: 900px) {
@@ -1019,6 +1130,11 @@ img {
     width: 100%;
   }
 }
+
+
+/* =========================
+   RESPONSIVE MOBILE
+========================= */
 
 @media (max-width: 640px) {
   body {
@@ -1139,6 +1255,26 @@ img {
     font-size: 0.88rem;
   }
 
+  .swal2-container {
+    padding: 6px !important;
+  }
+
+  .swal2-popup {
+    width: calc(100vw - 12px) !important;
+    max-height: calc(100dvh - 12px) !important;
+    border-radius: 18px !important;
+    padding: 12px !important;
+  }
+
+  .swal2-title {
+    font-size: 1.08rem !important;
+  }
+
+  .swal2-html-container {
+    max-height: calc(100dvh - 138px) !important;
+    padding-inline: 0 !important;
+  }
+
   .dialogSection {
     padding: 11px;
     border-radius: 16px;
@@ -1163,18 +1299,26 @@ img {
 
   .brandSelectGrid {
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 10px;
   }
 
   .brandOption {
-    min-height: 118px;
-    padding: 8px;
+    min-height: 150px;
+    padding: 10px;
     border-radius: 16px;
   }
 
   .brandImageBox {
-    height: 62px;
+    height: 96px;
     border-radius: 12px;
+  }
+
+  .brandImageBox img {
+    padding: 6px;
+  }
+
+  .brandOption strong {
+    font-size: 1rem;
   }
 
   .qtyChip {
@@ -1188,10 +1332,21 @@ img {
     gap: 6px;
   }
 
+  .inlineCameraVideo {
+    height: clamp(220px, 44dvh, 420px);
+    max-height: 420px;
+    border-radius: 14px;
+  }
+
   .successSummary div {
     grid-template-columns: 96px 1fr;
   }
 }
+
+
+/* =========================
+   RESPONSIVE SMALL MOBILE
+========================= */
 
 @media (max-width: 420px) {
   .topbar {
@@ -1231,161 +1386,6 @@ img {
     grid-template-columns: 1fr;
   }
 
-  .brandOption {
-    min-height: 108px;
-  }
-
-  .brandImageBox {
-    height: 56px;
-  }
-
-  .evidencePreviewGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .evidenceThumb {
-    aspect-ratio: 4 / 3;
-  }
-}
-.evidenceControl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  align-items: center;
-}
-
-.evidenceControl .secondaryBtn {
-  width: 100%;
-  min-height: 46px;
-}
-
-.evidenceCount {
-  grid-column: 1 / -1;
-  display: block;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  text-align: center;
-}
-
-@media (max-width: 420px) {
-  .evidenceControl {
-    grid-template-columns: 1fr;
-  }
-
-  .evidenceCount {
-    grid-column: auto;
-  }
-}
-/* =========================
-   BRAND IMAGE - IMPROVED
-========================= */
-
-.brandSelectGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.brandOption {
-  min-height: 170px;
-  padding: 12px;
-  border-radius: 20px;
-}
-
-.brandImageBox {
-  width: 100%;
-  height: 112px;
-  border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid #dbe3ea;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-}
-
-.brandImageBox img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 8px;
-}
-
-.brandOption strong {
-  font-size: 1.08rem;
-  line-height: 1.1;
-}
-
-
-/* =========================
-   CAMERA DIALOG
-========================= */
-
-.cameraDialog {
-  display: grid;
-  gap: 10px;
-}
-
-.liveCameraVideo {
-  width: 100%;
-  max-height: 62vh;
-  border-radius: 18px;
-  background: #020617;
-  object-fit: contain;
-  border: 1px solid #dbe3ea;
-}
-
-.liveCameraCanvas {
-  display: none;
-}
-
-.cameraHint {
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: #f8fafc;
-  color: #475569;
-  font-weight: 700;
-  font-size: 0.92rem;
-  text-align: center;
-  border: 1px solid #e2e8f0;
-}
-
-
-/* =========================
-   MOBILE BRAND / CAMERA
-========================= */
-
-@media (max-width: 640px) {
-  .brandSelectGrid {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .brandOption {
-    min-height: 150px;
-    padding: 10px;
-  }
-
-  .brandImageBox {
-    height: 96px;
-  }
-
-  .brandImageBox img {
-    padding: 6px;
-  }
-
-  .brandOption strong {
-    font-size: 1rem;
-  }
-
-  .liveCameraVideo {
-    max-height: 58vh;
-    border-radius: 16px;
-  }
-}
-
-@media (max-width: 420px) {
   .brandSelectGrid {
     grid-template-columns: 1fr;
   }
@@ -1401,49 +1401,45 @@ img {
   .brandOption strong {
     font-size: 1.08rem;
   }
-}
-/* =========================
-   INLINE CAMERA IN MAIN FORM
-========================= */
 
-.inlineCameraPanel {
-  display: grid;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 18px;
-  border: 1px solid #99f6e4;
-  background: #f0fdfa;
-}
+  .evidenceControl {
+    grid-template-columns: 1fr;
+  }
 
-.inlineCameraVideo {
-  width: 100%;
-  max-height: 54vh;
-  border-radius: 16px;
-  background: #020617;
-  object-fit: contain;
-  border: 1px solid #dbe3ea;
-}
+  .evidenceCount {
+    grid-column: auto;
+  }
 
-.inlineCameraCanvas {
-  display: none;
-}
+  .evidencePreviewGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
-.inlineCameraActions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
+  .evidenceThumb {
+    aspect-ratio: 4 / 3;
+  }
 
-.inlineCameraActions button {
-  width: 100%;
-}
+  .inlineCameraPanel {
+    padding: 8px;
+    border-radius: 16px;
+  }
 
-@media (max-width: 480px) {
   .inlineCameraVideo {
-    max-height: 44vh;
+    height: clamp(200px, 42dvh, 360px);
+    max-height: 360px;
+    border-radius: 12px;
   }
 
   .inlineCameraActions {
     grid-template-columns: 1fr;
+  }
+
+  .swal2-actions {
+    flex-direction: column-reverse !important;
+    width: 100% !important;
+  }
+
+  .swal2-confirm,
+  .swal2-cancel {
+    width: 100% !important;
   }
 }
