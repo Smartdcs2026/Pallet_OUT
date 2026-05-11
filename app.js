@@ -30,6 +30,8 @@
 
   const ECD_REGEX = /^[A-Za-z0-9]+$/;
 
+  const DEFAULT_PALLET_QTY = [10, 20, 30, 40, 50, 60, 80, 100];
+
   const state = {
     currentUser: "",
     options: {
@@ -74,7 +76,7 @@
     inboundList: $("inboundList"),
 
     cameraInput: $("cameraInput"),
-uploadInput: $("uploadInput")
+    uploadInput: $("uploadInput")
   };
 
   /* =========================
@@ -87,6 +89,7 @@ uploadInput: $("uploadInput")
     bindEvents();
 
     const savedUser = sessionStorage.getItem(STORAGE_KEY_USER) || "";
+
     if (savedUser) {
       state.currentUser = savedUser;
       showMainView(savedUser);
@@ -110,24 +113,24 @@ uploadInput: $("uploadInput")
     }
 
     if (els.refreshBtn) {
-      els.refreshBtn.addEventListener("click", loadInboundRows);
+      els.refreshBtn.addEventListener("click", () => loadInboundRows(true));
     }
 
     if (els.emptyRefreshBtn) {
-      els.emptyRefreshBtn.addEventListener("click", loadInboundRows);
+      els.emptyRefreshBtn.addEventListener("click", () => loadInboundRows(true));
     }
 
     if (els.searchInput) {
       els.searchInput.addEventListener("input", handleSearch);
     }
 
-   if (els.cameraInput) {
-  els.cameraInput.addEventListener("change", handleEvidenceInputChange);
-}
+    if (els.cameraInput) {
+      els.cameraInput.addEventListener("change", handleEvidenceInputChange);
+    }
 
-if (els.uploadInput) {
-  els.uploadInput.addEventListener("change", handleEvidenceInputChange);
-}
+    if (els.uploadInput) {
+      els.uploadInput.addEventListener("change", handleEvidenceInputChange);
+    }
   }
 
   /* =========================
@@ -135,8 +138,8 @@ if (els.uploadInput) {
    * ========================= */
 
   function showLoginView() {
-    els.loginView.classList.remove("isHidden");
-    els.mainView.classList.add("isHidden");
+    if (els.loginView) els.loginView.classList.remove("isHidden");
+    if (els.mainView) els.mainView.classList.add("isHidden");
 
     setTimeout(() => {
       if (els.passInput) els.passInput.focus();
@@ -144,10 +147,9 @@ if (els.uploadInput) {
   }
 
   function showMainView(name) {
-    els.loginView.classList.add("isHidden");
-    els.mainView.classList.remove("isHidden");
-
-    els.currentUserName.textContent = name || "-";
+    if (els.loginView) els.loginView.classList.add("isHidden");
+    if (els.mainView) els.mainView.classList.remove("isHidden");
+    if (els.currentUserName) els.currentUserName.textContent = name || "-";
   }
 
   function setStatus(show, text) {
@@ -155,7 +157,9 @@ if (els.uploadInput) {
 
     if (show) {
       els.statusBox.classList.remove("isHidden");
-      els.statusText.textContent = text || "กำลังโหลดข้อมูล...";
+      if (els.statusText) {
+        els.statusText.textContent = text || "กำลังโหลดข้อมูล...";
+      }
     } else {
       els.statusBox.classList.add("isHidden");
     }
@@ -294,10 +298,8 @@ if (els.uploadInput) {
     try {
       setStatus(true, "กำลังโหลดตัวเลือกและข้อมูลขาเข้า...");
 
-      await Promise.all([
-        loadOptions(),
-        loadInboundRows(false)
-      ]);
+      await loadOptions();
+      await loadInboundRows(false);
 
     } catch (err) {
       await showError(err);
@@ -325,13 +327,14 @@ if (els.uploadInput) {
       }));
 
     state.options.palletQty = state.options.palletQty
-  .map((n) => Number(n))
-  .filter((n) => Number.isFinite(n) && n > 0)
-  .sort((a, b) => a - b);
+      .map((n) => Number(n))
+      .filter((n) => Number.isFinite(n) && n > 0)
+      .sort((a, b) => a - b);
 
-if (!state.options.palletQty.length) {
-  state.options.palletQty = [10, 20, 30, 40, 50, 60, 80, 100];
-}
+    if (!state.options.palletQty.length) {
+      state.options.palletQty = DEFAULT_PALLET_QTY.slice();
+    }
+  }
 
   async function loadInboundRows(showLoading = true) {
     try {
@@ -350,9 +353,7 @@ if (!state.options.palletQty.length) {
 
       if (els.searchInput) {
         const q = String(els.searchInput.value || "").trim();
-        if (q) {
-          applySearch(q);
-        }
+        if (q) applySearch(q);
       }
 
       renderInboundRows(state.filteredRows);
@@ -477,7 +478,10 @@ if (!state.options.palletQty.length) {
       `;
 
       const btn = card.querySelector(".recordOutBtn");
-      btn.addEventListener("click", () => openRecordOutDialog(row));
+
+      if (btn) {
+        btn.addEventListener("click", () => openRecordOutDialog(row));
+      }
 
       card.addEventListener("click", (ev) => {
         if (ev.target && ev.target.closest("button")) return;
@@ -549,13 +553,13 @@ if (!state.options.palletQty.length) {
     state.selectedQty = "";
     state.isSubmitting = false;
 
-if (els.cameraInput) {
-  els.cameraInput.value = "";
-}
+    if (els.cameraInput) {
+      els.cameraInput.value = "";
+    }
 
-if (els.uploadInput) {
-  els.uploadInput.value = "";
-}
+    if (els.uploadInput) {
+      els.uploadInput.value = "";
+    }
   }
 
   function buildRecordOutDialogHtml(row) {
@@ -608,35 +612,37 @@ if (els.uploadInput) {
           </div>
 
           <div class="fieldGroup">
-           <label for="ecdNameInput">หมายเลขเอกสาร ECD <em>*</em></label>
-<input
-  id="ecdNameInput"
-  class="dialogInput"
-  type="text"
-  inputmode="latin"
-  autocomplete="off"
-  placeholder="เช่น ECD001 หรือ DOC123"
-  maxlength="30"
->
-<div class="helpText">หมายเลขเอกสารใช้ได้เฉพาะ A-Z, a-z, 0-9 ห้ามเว้นวรรคและห้ามอักขระพิเศษ</div>
+            <label for="ecdNameInput">หมายเลขเอกสาร ECD <em>*</em></label>
+            <input
+              id="ecdNameInput"
+              class="dialogInput"
+              type="text"
+              inputmode="latin"
+              autocomplete="off"
+              placeholder="เช่น ECD001 หรือ DOC123"
+              maxlength="30"
+            >
+            <div class="helpText">
+              หมายเลขเอกสารใช้ได้เฉพาะ A-Z, a-z, 0-9 ห้ามเว้นวรรคและห้ามอักขระพิเศษ
+            </div>
           </div>
 
           <div class="fieldGroup">
             <label>รูปหลักฐาน <em>*</em></label>
 
             <div class="evidenceControl">
-  <button id="openCameraBtn" type="button" class="secondaryBtn">
-    เปิดกล้อง
-  </button>
+              <button id="openCameraBtn" type="button" class="secondaryBtn">
+                เปิดกล้อง
+              </button>
 
-  <button id="pickGalleryBtn" type="button" class="secondaryBtn">
-    เลือกรูปจากเครื่อง
-  </button>
+              <button id="pickGalleryBtn" type="button" class="secondaryBtn">
+                เลือกรูปจากเครื่อง
+              </button>
 
-  <span id="evidenceCountText" class="evidenceCount">
-    ยังไม่ได้เลือกรูป
-  </span>
-</div>
+              <span id="evidenceCountText" class="evidenceCount">
+                ยังไม่ได้เลือกรูป
+              </span>
+            </div>
 
             <div class="helpText">ต้องมีอย่างน้อย 1 รูป และสูงสุด 4 รูป</div>
             <div id="evidencePreviewGrid" class="evidencePreviewGrid"></div>
@@ -683,14 +689,19 @@ if (els.uploadInput) {
   }
 
   function buildQtyOptionsHtml() {
-    const qtyList = state.options.palletQty || [];
+    let qtyList = state.options.palletQty || [];
+
+    qtyList = qtyList
+      .map((qty) => Number(qty))
+      .filter((qty) => Number.isFinite(qty) && qty > 0)
+      .sort((a, b) => a - b);
 
     if (!qtyList.length) {
-      return "";
+      qtyList = DEFAULT_PALLET_QTY.slice();
     }
 
     return qtyList.map((qty) => {
-      return `<button type="button" class="qtyChip" data-qty="${Number(qty)}">${Number(qty)}</button>`;
+      return `<button type="button" class="qtyChip" data-qty="${qty}">${qty}</button>`;
     }).join("");
   }
 
@@ -708,8 +719,8 @@ if (els.uploadInput) {
     const qtyButtons = document.querySelectorAll(".qtyChip");
     const customQtyInput = $("customQtyInput");
     const ecdNameInput = $("ecdNameInput");
-   const openCameraBtn = $("openCameraBtn");
-const pickGalleryBtn = $("pickGalleryBtn");
+    const openCameraBtn = $("openCameraBtn");
+    const pickGalleryBtn = $("pickGalleryBtn");
 
     brandButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -728,12 +739,18 @@ const pickGalleryBtn = $("pickGalleryBtn");
 
         if (qty === "custom") {
           state.selectedQty = "custom";
-          customQtyInput.classList.remove("isHidden");
-          setTimeout(() => customQtyInput.focus(), 50);
+
+          if (customQtyInput) {
+            customQtyInput.classList.remove("isHidden");
+            setTimeout(() => customQtyInput.focus(), 50);
+          }
         } else {
           state.selectedQty = qty;
-          customQtyInput.classList.add("isHidden");
-          customQtyInput.value = "";
+
+          if (customQtyInput) {
+            customQtyInput.classList.add("isHidden");
+            customQtyInput.value = "";
+          }
         }
       });
     });
@@ -746,21 +763,39 @@ const pickGalleryBtn = $("pickGalleryBtn");
       });
     }
 
-   if (openCameraBtn) {
-  openCameraBtn.addEventListener("click", () => {
-    if (!els.cameraInput) return;
-    els.cameraInput.value = "";
-    els.cameraInput.click();
-  });
-}
+    if (openCameraBtn) {
+      openCameraBtn.addEventListener("click", () => {
+        if (!els.cameraInput) {
+          Swal.fire({
+            icon: "error",
+            title: "ไม่พบช่องเปิดกล้อง",
+            text: "กรุณาตรวจสอบ index.html ว่ามี input id=\"cameraInput\" แล้วหรือไม่",
+            confirmButtonText: "ตกลง"
+          });
+          return;
+        }
 
-if (pickGalleryBtn) {
-  pickGalleryBtn.addEventListener("click", () => {
-    if (!els.uploadInput) return;
-    els.uploadInput.value = "";
-    els.uploadInput.click();
-  });
-}
+        els.cameraInput.value = "";
+        els.cameraInput.click();
+      });
+    }
+
+    if (pickGalleryBtn) {
+      pickGalleryBtn.addEventListener("click", () => {
+        if (!els.uploadInput) {
+          Swal.fire({
+            icon: "error",
+            title: "ไม่พบช่องเลือกรูป",
+            text: "กรุณาตรวจสอบ index.html ว่ามี input id=\"uploadInput\" แล้วหรือไม่",
+            confirmButtonText: "ตกลง"
+          });
+          return;
+        }
+
+        els.uploadInput.value = "";
+        els.uploadInput.click();
+      });
+    }
 
     updateEvidencePreview();
   }
@@ -779,7 +814,7 @@ if (pickGalleryBtn) {
     let qtyOut = 0;
 
     if (state.selectedQty === "custom") {
-      qtyOut = Number(customQtyInput.value || 0);
+      qtyOut = Number(customQtyInput ? customQtyInput.value || 0 : 0);
     } else {
       qtyOut = Number(state.selectedQty || 0);
     }
@@ -790,15 +825,17 @@ if (pickGalleryBtn) {
 
     qtyOut = Math.floor(qtyOut);
 
-    const ecdName = String(ecdNameInput.value || "").trim().toUpperCase();
+    const ecdName = String(ecdNameInput ? ecdNameInput.value || "" : "")
+      .trim()
+      .toUpperCase();
 
-   if (!ecdName) {
-  throw new Error("กรุณากรอกหมายเลขเอกสาร ECD");
-}
+    if (!ecdName) {
+      throw new Error("กรุณากรอกหมายเลขเอกสาร ECD");
+    }
 
-if (!ECD_REGEX.test(ecdName)) {
-  throw new Error("หมายเลขเอกสาร ECD กรอกได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
-}
+    if (!ECD_REGEX.test(ecdName)) {
+      throw new Error("หมายเลขเอกสาร ECD กรอกได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
+    }
 
     if (state.selectedEvidenceFiles.length < CONFIG.MIN_IMAGES) {
       throw new Error("กรุณาแนบรูปหลักฐานอย่างน้อย 1 รูป");
@@ -823,7 +860,7 @@ if (!ECD_REGEX.test(ecdName)) {
       qtyOut,
       ecdName,
       recordedBy: state.currentUser,
-      note: String(noteInput.value || "").trim(),
+      note: String(noteInput ? noteInput.value || "" : "").trim(),
       images: state.selectedEvidencePayloads
     };
   }
@@ -908,9 +945,14 @@ if (!ECD_REGEX.test(ecdName)) {
         <button type="button" class="removeEvidenceBtn" data-index="${index}" aria-label="ลบรูป">×</button>
       `;
 
-      item.querySelector(".removeEvidenceBtn").addEventListener("click", () => {
-        removeEvidenceAt(index);
-      });
+      const removeBtn = item.querySelector(".removeEvidenceBtn");
+
+      if (removeBtn) {
+        removeBtn.addEventListener("click", () => {
+          URL.revokeObjectURL(url);
+          removeEvidenceAt(index);
+        });
+      }
 
       grid.appendChild(item);
     });
@@ -1064,7 +1106,7 @@ if (!ECD_REGEX.test(ecdName)) {
         confirmButtonText: "ตกลง"
       });
 
-      await loadInboundRows();
+      await loadInboundRows(true);
 
     } catch (err) {
       await showError(err);
