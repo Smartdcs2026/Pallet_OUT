@@ -1855,3 +1855,119 @@ img {
     min-width: 112px !important;
   }
 }
+/* =====================================================
+   BRAND IMAGE FINAL FIX - SHOW FULL PALLET IMAGE
+   วางท้ายไฟล์ style.css
+===================================================== */
+
+.brandSelectGrid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+.brandOption {
+  position: relative !important;
+  display: grid !important;
+  grid-template-rows: auto auto !important;
+  align-items: center !important;
+  justify-items: center !important;
+  gap: 6px !important;
+
+  min-height: 150px !important;
+  height: auto !important;
+  padding: 8px !important;
+
+  border-radius: 16px !important;
+  overflow: visible !important;
+}
+
+.brandImageBox {
+  width: 100% !important;
+  height: 110px !important;
+
+  display: block !important;
+  position: relative !important;
+
+  background-color: #ffffff !important;
+  background-image: var(--brand-img) !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: contain !important;
+
+  border: 1px solid #dbe3ea !important;
+  border-radius: 13px !important;
+  overflow: hidden !important;
+}
+
+/* ซ่อน img จริง เพื่อให้ background-size: contain เป็นตัวควบคุมภาพ */
+.brandImageBox .brandFallbackImg {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.brandOption strong {
+  display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+  font-size: 0.88rem !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+  margin: 0 !important;
+}
+
+.brandOption.isSelected::after {
+  top: 6px !important;
+  right: 6px !important;
+  z-index: 5 !important;
+}
+
+
+/* มือถือ */
+@media (max-width: 640px) {
+  .brandSelectGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .brandOption {
+    min-height: 126px !important;
+    padding: 6px !important;
+    gap: 5px !important;
+    border-radius: 14px !important;
+  }
+
+  .brandImageBox {
+    height: 90px !important;
+    border-radius: 11px !important;
+    background-size: contain !important;
+    background-position: center center !important;
+  }
+
+  .brandOption strong {
+    font-size: 0.78rem !important;
+  }
+}
+
+
+/* มือถือจอเล็ก */
+@media (max-width: 420px) {
+  .brandOption {
+    min-height: 116px !important;
+    padding: 5px !important;
+  }
+
+  .brandImageBox {
+    height: 82px !important;
+    background-size: contain !important;
+  }
+
+  .brandOption strong {
+    font-size: 0.72rem !important;
+  }
+}
