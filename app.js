@@ -28,9 +28,9 @@
   const STORAGE_KEY_USER = "PALLET_OUT_CURRENT_USER";
   const STORAGE_KEY_LOGIN_AT = "PALLET_OUT_LOGIN_AT";
 
- const ECD_REGEX = /^[A-Za-z0-9]+$/;
-const TCR_REGEX = /^[A-Za-z0-9]+$/;
-const DEFAULT_PALLET_QTY = [10, 20, 30, 40, 50, 60, 80, 100];
+  const ECD_REGEX = /^[A-Za-z0-9]+$/;
+  const TCR_REGEX = /^[A-Za-z0-9]+$/;
+  const DEFAULT_PALLET_QTY = [10, 20, 30, 40, 50, 60, 80, 100];
 
   const state = {
     currentUser: "",
@@ -172,6 +172,7 @@ const DEFAULT_PALLET_QTY = [10, 20, 30, 40, 50, 60, 80, 100];
 
     if (show) {
       els.statusBox.classList.remove("isHidden");
+
       if (els.statusText) {
         els.statusText.textContent = text || "กำลังโหลดข้อมูล...";
       }
@@ -364,8 +365,8 @@ const DEFAULT_PALLET_QTY = [10, 20, 30, 40, 50, 60, 80, 100];
         throw new Error(res.message || "โหลดรายการขาเข้าไม่สำเร็จ");
       }
 
-     state.inboundRows = sortRowsByLatestTimestamp(Array.isArray(res.rows) ? res.rows : []);
-state.filteredRows = state.inboundRows.slice();
+      state.inboundRows = sortRowsByLatestTimestamp(Array.isArray(res.rows) ? res.rows : []);
+      state.filteredRows = state.inboundRows.slice();
 
       if (els.searchInput) {
         const q = String(els.searchInput.value || "").trim();
@@ -385,10 +386,7 @@ state.filteredRows = state.inboundRows.slice();
   }
 
   /* =========================
-   * SEARCH
-   * ========================= */
-  /* =========================
-   * SEARCH
+   * SEARCH / SORT
    * ========================= */
 
   function handleSearch(e) {
@@ -429,16 +427,10 @@ state.filteredRows = state.inboundRows.slice();
     );
   }
 
-
-  /* =========================
-   * SORT HELPERS
-   * ========================= */
-
   function sortRowsByLatestTimestamp(rows) {
     return Array.from(rows || []).sort((a, b) => {
       const ta = parseDisplayDateTimeToMs(a.timestampIn);
       const tb = parseDisplayDateTimeToMs(b.timestampIn);
-
       return tb - ta;
     });
   }
@@ -467,7 +459,6 @@ state.filteredRows = state.inboundRows.slice();
     const d = new Date(text);
     return isNaN(d.getTime()) ? 0 : d.getTime();
   }
-
 
   /* =========================
    * RENDER LIST
@@ -619,13 +610,8 @@ state.filteredRows = state.inboundRows.slice();
 
     stopInlineCamera();
 
-    if (els.cameraInput) {
-      els.cameraInput.value = "";
-    }
-
-    if (els.uploadInput) {
-      els.uploadInput.value = "";
-    }
+    if (els.cameraInput) els.cameraInput.value = "";
+    if (els.uploadInput) els.uploadInput.value = "";
   }
 
   function buildRecordOutDialogHtml(row) {
@@ -650,23 +636,27 @@ state.filteredRows = state.inboundRows.slice();
         </section>
 
         <section class="dialogSection">
-  <div class="dialogSectionHeader">
-    <h3>ข้อมูลขาออก</h3>
+          <div class="dialogSectionHeader">
+            <h3>ข้อมูลขาออก</h3>
 
-    <div class="manageWrap">
-      <button id="manageDataBtn" type="button" class="manageDataBtn">
-        จัดการข้อมูล
-      </button>
+            <div class="manageWrap">
+              <button id="manageDataBtn" type="button" class="manageDataBtn">
+                จัดการข้อมูล
+              </button>
 
-      <div id="manageMenu" class="manageMenu isHidden">
-        <button id="suppressInboundBtn" type="button" class="manageMenuBtn danger">
-          ซ่อนรายการนี้
-        </button>
-      </div>
-    </div>
-  </div>
+              <div id="manageMenu" class="manageMenu isHidden">
+                <button id="suppressInboundBtn" type="button" class="manageMenuBtn danger">
+                  ซ่อนรายการนี้
+                </button>
 
-  <div id="dialogNotice" class="dialogNotice isHidden"></div>
+                <button id="editOutboundBtn" type="button" class="manageMenuBtn edit">
+                  แก้ไขข้อมูล
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="dialogNotice" class="dialogNotice isHidden"></div>
 
           <div class="fieldGroup">
             <label>เลือกยี่ห้อพาเลทขาออก <em>*</em></label>
@@ -694,36 +684,36 @@ state.filteredRows = state.inboundRows.slice();
           </div>
 
           <div class="docPairGrid">
-  <div class="fieldGroup">
-    <label for="ecdNameInput">หมายเลขเอกสาร ECD <em>*</em></label>
-    <input
-      id="ecdNameInput"
-      class="dialogInput"
-      type="text"
-      inputmode="latin"
-      autocomplete="off"
-      placeholder="ECD001"
-      maxlength="30"
-    >
-  </div>
+            <div class="fieldGroup">
+              <label for="ecdNameInput">หมายเลขเอกสาร ECD <em>*</em></label>
+              <input
+                id="ecdNameInput"
+                class="dialogInput"
+                type="text"
+                inputmode="latin"
+                autocomplete="off"
+                placeholder="ECD001"
+                maxlength="30"
+              >
+            </div>
 
-  <div class="fieldGroup">
-    <label for="tcrNoInput">หมายเลขเอกสาร TCR <em>*</em></label>
-    <input
-      id="tcrNoInput"
-      class="dialogInput"
-      type="text"
-      inputmode="latin"
-      autocomplete="off"
-      placeholder="TCR001"
-      maxlength="30"
-    >
-  </div>
-</div>
+            <div class="fieldGroup">
+              <label for="tcrNoInput">หมายเลขเอกสาร TCR <em>*</em></label>
+              <input
+                id="tcrNoInput"
+                class="dialogInput"
+                type="text"
+                inputmode="latin"
+                autocomplete="off"
+                placeholder="TCR001"
+                maxlength="30"
+              >
+            </div>
+          </div>
 
-<div class="helpText">
-  ECD/TCR ใช้ได้เฉพาะ A-Z, a-z, 0-9 ห้ามเว้นวรรคและห้ามอักขระพิเศษ
-</div>
+          <div class="helpText">
+            ECD/TCR ใช้ได้เฉพาะ A-Z, a-z, 0-9 ห้ามเว้นวรรคและห้ามอักขระพิเศษ
+          </div>
 
           <div class="fieldGroup">
             <label>รูปหลักฐาน <em>*</em></label>
@@ -787,33 +777,34 @@ state.filteredRows = state.inboundRows.slice();
   }
 
   function buildBrandOptionsHtml() {
-  const brands = state.options.brands || [];
+    const brands = state.options.brands || [];
 
-  if (!brands.length) {
-    return `<div class="optionMissing">ไม่พบตัวเลือก Brand ในชีท Brand</div>`;
+    if (!brands.length) {
+      return `<div class="optionMissing">ไม่พบตัวเลือก Brand ในชีท Brand</div>`;
+    }
+
+    return brands.map((b) => {
+      const brand = escapeHtml(b.brand || "");
+      const imageUrl = escapeAttr(b.imageUrl || "");
+
+      return `
+        <button type="button" class="brandOption" data-brand="${brand}">
+          <div
+            class="brandImageBox"
+            style="${imageUrl ? `--brand-img: url('${imageUrl}');` : ""}"
+          >
+            ${
+              imageUrl
+                ? `<img class="brandFallbackImg" src="${imageUrl}" alt="${brand}" loading="lazy">`
+                : `<span>${brand}</span>`
+            }
+          </div>
+          <strong>${brand}</strong>
+        </button>
+      `;
+    }).join("");
   }
 
-  return brands.map((b) => {
-    const brand = escapeHtml(b.brand || "");
-    const imageUrl = escapeAttr(b.imageUrl || "");
-
-    return `
-      <button type="button" class="brandOption" data-brand="${brand}">
-        <div
-          class="brandImageBox"
-          style="${imageUrl ? `--brand-img: url('${imageUrl}');` : ""}"
-        >
-          ${
-            imageUrl
-              ? `<img class="brandFallbackImg" src="${imageUrl}" alt="${brand}" loading="lazy">`
-              : `<span>${brand}</span>`
-          }
-        </div>
-        <strong>${brand}</strong>
-      </button>
-    `;
-  }).join("");
-}
   function buildQtyOptionsHtml() {
     let qtyList = state.options.palletQty || [];
 
@@ -843,18 +834,20 @@ state.filteredRows = state.inboundRows.slice();
   function initDialogEvents(row) {
     const brandButtons = document.querySelectorAll(".brandOption");
     const qtyButtons = document.querySelectorAll(".qtyChip");
+
     const customQtyInput = $("customQtyInput");
-const ecdNameInput = $("ecdNameInput");
-const tcrNoInput = $("tcrNoInput");
+    const ecdNameInput = $("ecdNameInput");
+    const tcrNoInput = $("tcrNoInput");
 
-const manageDataBtn = $("manageDataBtn");
-const manageMenu = $("manageMenu");
-const suppressInboundBtn = $("suppressInboundBtn");
+    const manageDataBtn = $("manageDataBtn");
+    const manageMenu = $("manageMenu");
+    const suppressInboundBtn = $("suppressInboundBtn");
+    const editOutboundBtn = $("editOutboundBtn");
 
-const openCameraBtn = $("openCameraBtn");
-const captureCameraBtn = $("captureCameraBtn");
-const closeCameraBtn = $("closeCameraBtn");
-const pickGalleryBtn = $("pickGalleryBtn");
+    const openCameraBtn = $("openCameraBtn");
+    const captureCameraBtn = $("captureCameraBtn");
+    const closeCameraBtn = $("closeCameraBtn");
+    const pickGalleryBtn = $("pickGalleryBtn");
 
     brandButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -901,26 +894,36 @@ const pickGalleryBtn = $("pickGalleryBtn");
         clearDialogNotice();
       });
     }
-   if (tcrNoInput) {
-  tcrNoInput.addEventListener("input", () => {
-    tcrNoInput.value = tcrNoInput.value
-      .replace(/[^A-Za-z0-9]/g, "")
-      .toUpperCase();
 
-    clearDialogNotice();
-  });
-}
+    if (tcrNoInput) {
+      tcrNoInput.addEventListener("input", () => {
+        tcrNoInput.value = tcrNoInput.value
+          .replace(/[^A-Za-z0-9]/g, "")
+          .toUpperCase();
+
+        clearDialogNotice();
+      });
+    }
+
     if (manageDataBtn && manageMenu) {
-  manageDataBtn.addEventListener("click", () => {
-    manageMenu.classList.toggle("isHidden");
-  });
-}
+      manageDataBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        manageMenu.classList.toggle("isHidden");
+      });
+    }
 
-if (suppressInboundBtn) {
-  suppressInboundBtn.addEventListener("click", async () => {
-    await handleSuppressInbound(row);
-  });
-}
+    if (suppressInboundBtn) {
+      suppressInboundBtn.addEventListener("click", async () => {
+        await handleSuppressInbound(row);
+      });
+    }
+
+    if (editOutboundBtn) {
+      editOutboundBtn.addEventListener("click", () => {
+        handleEditOutboundPlaceholder();
+      });
+    }
+
     if (openCameraBtn) {
       openCameraBtn.addEventListener("click", async () => {
         await openInlineCamera();
@@ -956,9 +959,9 @@ if (suppressInboundBtn) {
 
   async function collectAndValidateDialogData(row) {
     const customQtyInput = $("customQtyInput");
-const ecdNameInput = $("ecdNameInput");
-const tcrNoInput = $("tcrNoInput");
-const noteInput = $("noteInput");
+    const ecdNameInput = $("ecdNameInput");
+    const tcrNoInput = $("tcrNoInput");
+    const noteInput = $("noteInput");
 
     const brandOut = String(state.selectedBrand || "").trim().toUpperCase();
 
@@ -993,17 +996,17 @@ const noteInput = $("noteInput");
     }
 
     const tcrNo = String(tcrNoInput ? tcrNoInput.value || "" : "")
-  .trim()
-  .toUpperCase();
+      .trim()
+      .toUpperCase();
 
-if (!tcrNo) {
-  throw new Error("กรุณากรอกหมายเลขเอกสาร TCR");
-}
+    if (!tcrNo) {
+      throw new Error("กรุณากรอกหมายเลขเอกสาร TCR");
+    }
 
-if (!TCR_REGEX.test(tcrNo)) {
-  throw new Error("หมายเลขเอกสาร TCR กรอกได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
-}
-    
+    if (!TCR_REGEX.test(tcrNo)) {
+      throw new Error("หมายเลขเอกสาร TCR กรอกได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
+    }
+
     if (state.selectedEvidenceFiles.length < CONFIG.MIN_IMAGES) {
       throw new Error("กรุณาแนบรูปหลักฐานอย่างน้อย 1 รูป");
     }
@@ -1023,18 +1026,18 @@ if (!TCR_REGEX.test(tcrNo)) {
 
     clearDialogNotice();
 
-  return {
-  autoId: row.autoId,
-  plateNo: row.plateNo || "",
-  driverFullName: row.driverFullName || joinName(row) || "",
-  brandOut,
-  qtyOut,
-  ecdName,
-  tcrNo,
-  recordedBy: state.currentUser,
-  note: String(noteInput ? noteInput.value || "" : "").trim(),
-  images: state.selectedEvidencePayloads
-};
+    return {
+      autoId: row.autoId,
+      plateNo: row.plateNo || "",
+      driverFullName: row.driverFullName || joinName(row) || "",
+      brandOut,
+      qtyOut,
+      ecdName,
+      tcrNo,
+      recordedBy: state.currentUser,
+      note: String(noteInput ? noteInput.value || "" : "").trim(),
+      images: state.selectedEvidencePayloads
+    };
   }
 
   /* =========================
@@ -1106,12 +1109,7 @@ if (!TCR_REGEX.test(tcrNo)) {
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       showDialogNotice("เบราว์เซอร์ไม่รองรับกล้องสด ระบบจะเปิดกล้อง/เลือกรูปแบบพื้นฐานของเครื่องแทน", "warning");
-
-      if (els.cameraInput) {
-        els.cameraInput.value = "";
-        els.cameraInput.click();
-      }
-
+      openCameraInputFallback();
       return;
     }
 
@@ -1136,14 +1134,16 @@ if (!TCR_REGEX.test(tcrNo)) {
 
     } catch (err) {
       stopInlineCamera();
-
       showDialogNotice("เปิดกล้องสดไม่ได้ ระบบจะเปิดเมนูถ่ายภาพ/เลือกรูปแบบพื้นฐานของเครื่องแทน", "warning");
-
-      if (els.cameraInput) {
-        els.cameraInput.value = "";
-        els.cameraInput.click();
-      }
+      openCameraInputFallback();
     }
+  }
+
+  function openCameraInputFallback() {
+    if (!els.cameraInput) return;
+
+    els.cameraInput.value = "";
+    els.cameraInput.click();
   }
 
   async function captureInlineCameraImage() {
@@ -1394,106 +1394,114 @@ if (!TCR_REGEX.test(tcrNo)) {
   }
 
   /* =========================
- * MANAGE / SUPPRESS INBOUND
- * ========================= */
+   * MANAGE / SUPPRESS / EDIT
+   * ========================= */
 
-async function handleSuppressInbound(row) {
-  if (!row || !row.autoId) {
-    showDialogNotice("ไม่พบ Auto ID ของรายการนี้", "error");
-    return;
-  }
-
-  const confirm = await Swal.fire({
-    icon: "warning",
-    title: "ซ่อนรายการนี้?",
-    html: `
-      <div class="confirmBox">
-        <div><span>Auto ID</span><strong>${escapeHtml(row.autoId || "-")}</strong></div>
-        <div><span>ทะเบียนรถ</span><strong>${escapeHtml(row.plateNo || "-")}</strong></div>
-        <div><span>พขร.</span><strong>${escapeHtml(row.driverFullName || joinName(row) || "-")}</strong></div>
-      </div>
-
-      <div class="confirmNote">
-        รายการนี้จะไม่แสดงในฟอร์มขาออกอีก แต่ข้อมูลในชีทขาเข้าจะไม่ถูกแก้ไข
-      </div>
-    `,
-    input: "textarea",
-    inputLabel: "เหตุผลการซ่อนรายการ",
-    inputPlaceholder: "เช่น คนขับกดเข้าผิด / ไม่ได้มารับพาเลท / รายการซ้ำ",
-    inputAttributes: {
-      maxlength: 250
-    },
-    showCancelButton: true,
-    confirmButtonText: "ยืนยันซ่อน",
-    cancelButtonText: "ยกเลิก",
-    reverseButtons: true,
-    inputValidator: (value) => {
-      if (!String(value || "").trim()) {
-        return "กรุณาระบุเหตุผลการซ่อนรายการ";
-      }
-      return null;
-    }
-  });
-
-  if (!confirm.isConfirmed) return;
-
-  const reason = String(confirm.value || "").trim();
-
-  try {
-    Swal.fire({
-      title: "กำลังซ่อนรายการ",
-      html: "กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูลการซ่อนรายการ",
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      didOpen: () => {
-        Swal.showLoading();
-      }
-    });
-
-    const res = await apiPost("/api/suppress-inbound", {
-      autoId: row.autoId,
-      suppressedBy: state.currentUser,
-      recordedBy: state.currentUser,
-      reason
-    }, 60000);
-
-    if (!res.ok) {
-      throw new Error(res.message || "ซ่อนรายการไม่สำเร็จ");
+  async function handleSuppressInbound(row) {
+    if (!row || !row.autoId) {
+      showDialogNotice("ไม่พบ Auto ID ของรายการนี้", "error");
+      return;
     }
 
-    removeInboundRowFromState(row.autoId);
-
-    await Swal.fire({
-      icon: "success",
-      title: "ซ่อนรายการสำเร็จ",
+    const confirm = await Swal.fire({
+      icon: "warning",
+      title: "ซ่อนรายการนี้?",
       html: `
-        <div class="successSummary">
-          <div><span>Auto ID</span><strong>${escapeHtml(res.autoId || row.autoId || "-")}</strong></div>
-          <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || row.plateNo || "-")}</strong></div>
-          <div><span>ผู้ซ่อน</span><strong>${escapeHtml(res.suppressedBy || state.currentUser || "-")}</strong></div>
-          <div><span>เวลา</span><strong>${escapeHtml(res.suppressedAt || "-")}</strong></div>
+        <div class="confirmBox">
+          <div><span>Auto ID</span><strong>${escapeHtml(row.autoId || "-")}</strong></div>
+          <div><span>ทะเบียนรถ</span><strong>${escapeHtml(row.plateNo || "-")}</strong></div>
+          <div><span>พขร.</span><strong>${escapeHtml(row.driverFullName || joinName(row) || "-")}</strong></div>
+        </div>
+
+        <div class="confirmNote">
+          รายการนี้จะไม่แสดงในฟอร์มขาออกอีก แต่ข้อมูลในชีทขาเข้าจะไม่ถูกแก้ไข
         </div>
       `,
-      confirmButtonText: "ตกลง"
+      input: "textarea",
+      inputLabel: "เหตุผลการซ่อนรายการ",
+      inputPlaceholder: "เช่น คนขับกดเข้าผิด / ไม่ได้มารับพาเลท / รายการซ้ำ",
+      inputAttributes: {
+        maxlength: 250
+      },
+      showCancelButton: true,
+      confirmButtonText: "ยืนยันซ่อน",
+      cancelButtonText: "ยกเลิก",
+      reverseButtons: true,
+      inputValidator: (value) => {
+        if (!String(value || "").trim()) {
+          return "กรุณาระบุเหตุผลการซ่อนรายการ";
+        }
+
+        return null;
+      }
     });
 
-  } catch (err) {
-    await showError(err);
+    if (!confirm.isConfirmed) return;
+
+    const reason = String(confirm.value || "").trim();
+
+    try {
+      Swal.fire({
+        title: "กำลังซ่อนรายการ",
+        html: "กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูลการซ่อนรายการ",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const res = await apiPost("/api/suppress-inbound", {
+        autoId: row.autoId,
+        suppressedBy: state.currentUser,
+        recordedBy: state.currentUser,
+        reason
+      }, 60000);
+
+      if (!res.ok) {
+        throw new Error(res.message || "ซ่อนรายการไม่สำเร็จ");
+      }
+
+      removeInboundRowFromState(row.autoId);
+
+      await Swal.fire({
+        icon: "success",
+        title: "ซ่อนรายการสำเร็จ",
+        html: `
+          <div class="successSummary">
+            <div><span>Auto ID</span><strong>${escapeHtml(res.autoId || row.autoId || "-")}</strong></div>
+            <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || row.plateNo || "-")}</strong></div>
+            <div><span>ผู้ซ่อน</span><strong>${escapeHtml(res.suppressedBy || state.currentUser || "-")}</strong></div>
+            <div><span>เวลา</span><strong>${escapeHtml(res.suppressedAt || "-")}</strong></div>
+          </div>
+        `,
+        confirmButtonText: "ตกลง"
+      });
+
+    } catch (err) {
+      await showError(err);
+    }
   }
-}
 
+  function handleEditOutboundPlaceholder() {
+    showDialogNotice(
+      "เมนูแก้ไขข้อมูลพร้อมแล้ว แต่ยังต้องเพิ่ม API ค้นหารายการขาออกย้อนหลังใน Code.gs/Worker ก่อนใช้งานจริง",
+      "info"
+    );
+  }
 
-function removeInboundRowFromState(autoId) {
-  const target = String(autoId || "").trim();
+  function removeInboundRowFromState(autoId) {
+    const target = String(autoId || "").trim();
 
-  if (!target) return;
+    if (!target) return;
 
-  state.inboundRows = state.inboundRows.filter((r) => String(r.autoId || "").trim() !== target);
-  state.filteredRows = state.filteredRows.filter((r) => String(r.autoId || "").trim() !== target);
+    state.inboundRows = state.inboundRows.filter((r) => String(r.autoId || "").trim() !== target);
+    state.filteredRows = state.filteredRows.filter((r) => String(r.autoId || "").trim() !== target);
 
-  renderInboundRows(state.filteredRows);
-  updateSummary();
-}
+    renderInboundRows(state.filteredRows);
+    updateSummary();
+  }
+
   /* =========================
    * SUBMIT
    * ========================= */
@@ -1519,22 +1527,22 @@ function removeInboundRowFromState(autoId) {
       }
 
       await Swal.fire({
-  icon: "success",
-  title: "บันทึกสำเร็จ",
-  html: `
-  <div class="successSummary">
-    <div><span>Outbound ID</span><strong>${escapeHtml(res.outboundId || "-")}</strong></div>
-    <div><span>Auto ID</span><strong>${escapeHtml(res.autoId || "-")}</strong></div>
-    <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || payload.plateNo || "-")}</strong></div>
-    <div><span>พขร.</span><strong>${escapeHtml(res.driverFullName || payload.driverFullName || "-")}</strong></div>
-    <div><span>ECD</span><strong>${escapeHtml(res.ecdName || payload.ecdName || "-")}</strong></div>
-    <div><span>TCR</span><strong>${escapeHtml(res.tcrNo || payload.tcrNo || "-")}</strong></div>
-    <div><span>เวลาออก</span><strong>${escapeHtml(res.timestampOut || "-")}</strong></div>
-    <div><span>Duration</span><strong>${escapeHtml(res.duration || "-")}</strong></div>
-  </div>
-`,
-  confirmButtonText: "ตกลง"
-});
+        icon: "success",
+        title: "บันทึกสำเร็จ",
+        html: `
+          <div class="successSummary">
+            <div><span>Outbound ID</span><strong>${escapeHtml(res.outboundId || "-")}</strong></div>
+            <div><span>Auto ID</span><strong>${escapeHtml(res.autoId || "-")}</strong></div>
+            <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || payload.plateNo || "-")}</strong></div>
+            <div><span>พขร.</span><strong>${escapeHtml(res.driverFullName || payload.driverFullName || "-")}</strong></div>
+            <div><span>ECD</span><strong>${escapeHtml(res.ecdName || payload.ecdName || "-")}</strong></div>
+            <div><span>TCR</span><strong>${escapeHtml(res.tcrNo || payload.tcrNo || "-")}</strong></div>
+            <div><span>เวลาออก</span><strong>${escapeHtml(res.timestampOut || "-")}</strong></div>
+            <div><span>Duration</span><strong>${escapeHtml(res.duration || "-")}</strong></div>
+          </div>
+        `,
+        confirmButtonText: "ตกลง"
+      });
 
       await loadInboundRows(true);
 
@@ -1619,6 +1627,7 @@ function removeInboundRowFromState(autoId) {
         if (err && err.name === "AbortError") {
           throw new Error("เชื่อมต่อ API เกินเวลาที่กำหนด กรุณาลองใหม่");
         }
+
         throw err;
       })
       .finally(() => {
