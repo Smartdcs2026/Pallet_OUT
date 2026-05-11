@@ -756,31 +756,33 @@ state.filteredRows = state.inboundRows.slice();
   }
 
   function buildBrandOptionsHtml() {
-    const brands = state.options.brands || [];
+  const brands = state.options.brands || [];
 
-    if (!brands.length) {
-      return `<div class="optionMissing">ไม่พบตัวเลือก Brand ในชีท Brand</div>`;
-    }
-
-    return brands.map((b) => {
-      const brand = escapeHtml(b.brand || "");
-      const imageUrl = escapeAttr(b.imageUrl || "");
-
-      return `
-        <button type="button" class="brandOption" data-brand="${brand}">
-          <div class="brandImageBox">
-            ${
-              imageUrl
-                ? `<img src="${imageUrl}" alt="${brand}" loading="lazy">`
-                : `<span>${brand}</span>`
-            }
-          </div>
-          <strong>${brand}</strong>
-        </button>
-      `;
-    }).join("");
+  if (!brands.length) {
+    return `<div class="optionMissing">ไม่พบตัวเลือก Brand ในชีท Brand</div>`;
   }
 
+  return brands.map((b) => {
+    const brand = escapeHtml(b.brand || "");
+    const imageUrl = escapeAttr(b.imageUrl || "");
+
+    return `
+      <button type="button" class="brandOption" data-brand="${brand}">
+        <div
+          class="brandImageBox"
+          style="${imageUrl ? `--brand-img: url('${imageUrl}');` : ""}"
+        >
+          ${
+            imageUrl
+              ? `<img class="brandFallbackImg" src="${imageUrl}" alt="${brand}" loading="lazy">`
+              : `<span>${brand}</span>`
+          }
+        </div>
+        <strong>${brand}</strong>
+      </button>
+    `;
+  }).join("");
+}
   function buildQtyOptionsHtml() {
     let qtyList = state.options.palletQty || [];
 
