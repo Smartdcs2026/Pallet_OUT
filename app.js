@@ -73,7 +73,8 @@
     emptyState: $("emptyState"),
     inboundList: $("inboundList"),
 
-    evidenceInput: $("evidenceInput")
+    cameraInput: $("cameraInput"),
+uploadInput: $("uploadInput")
   };
 
   /* =========================
@@ -120,9 +121,13 @@
       els.searchInput.addEventListener("input", handleSearch);
     }
 
-    if (els.evidenceInput) {
-      els.evidenceInput.addEventListener("change", handleEvidenceInputChange);
-    }
+   if (els.cameraInput) {
+  els.cameraInput.addEventListener("change", handleEvidenceInputChange);
+}
+
+if (els.uploadInput) {
+  els.uploadInput.addEventListener("change", handleEvidenceInputChange);
+}
   }
 
   /* =========================
@@ -320,10 +325,13 @@
       }));
 
     state.options.palletQty = state.options.palletQty
-      .map((n) => Number(n))
-      .filter((n) => Number.isFinite(n) && n > 0)
-      .sort((a, b) => a - b);
-  }
+  .map((n) => Number(n))
+  .filter((n) => Number.isFinite(n) && n > 0)
+  .sort((a, b) => a - b);
+
+if (!state.options.palletQty.length) {
+  state.options.palletQty = [10, 20, 30, 40, 50, 60, 80, 100];
+}
 
   async function loadInboundRows(showLoading = true) {
     try {
@@ -541,9 +549,13 @@
     state.selectedQty = "";
     state.isSubmitting = false;
 
-    if (els.evidenceInput) {
-      els.evidenceInput.value = "";
-    }
+if (els.cameraInput) {
+  els.cameraInput.value = "";
+}
+
+if (els.uploadInput) {
+  els.uploadInput.value = "";
+}
   }
 
   function buildRecordOutDialogHtml(row) {
@@ -596,30 +608,35 @@
           </div>
 
           <div class="fieldGroup">
-            <label for="ecdNameInput">ชื่อ ECD <em>*</em></label>
-            <input
-              id="ecdNameInput"
-              class="dialogInput"
-              type="text"
-              inputmode="latin"
-              autocomplete="off"
-              placeholder="เช่น ECD001"
-              maxlength="30"
-            >
-            <div class="helpText">ใช้ได้เฉพาะ A-Z, a-z, 0-9 ห้ามเว้นวรรคและห้ามอักขระพิเศษ</div>
+           <label for="ecdNameInput">หมายเลขเอกสาร ECD <em>*</em></label>
+<input
+  id="ecdNameInput"
+  class="dialogInput"
+  type="text"
+  inputmode="latin"
+  autocomplete="off"
+  placeholder="เช่น ECD001 หรือ DOC123"
+  maxlength="30"
+>
+<div class="helpText">หมายเลขเอกสารใช้ได้เฉพาะ A-Z, a-z, 0-9 ห้ามเว้นวรรคและห้ามอักขระพิเศษ</div>
           </div>
 
           <div class="fieldGroup">
             <label>รูปหลักฐาน <em>*</em></label>
 
             <div class="evidenceControl">
-              <button id="pickEvidenceBtn" type="button" class="secondaryBtn">
-                ถ่ายภาพ / เลือกรูป
-              </button>
-              <span id="evidenceCountText" class="evidenceCount">
-                ยังไม่ได้เลือกรูป
-              </span>
-            </div>
+  <button id="openCameraBtn" type="button" class="secondaryBtn">
+    เปิดกล้อง
+  </button>
+
+  <button id="pickGalleryBtn" type="button" class="secondaryBtn">
+    เลือกรูปจากเครื่อง
+  </button>
+
+  <span id="evidenceCountText" class="evidenceCount">
+    ยังไม่ได้เลือกรูป
+  </span>
+</div>
 
             <div class="helpText">ต้องมีอย่างน้อย 1 รูป และสูงสุด 4 รูป</div>
             <div id="evidencePreviewGrid" class="evidencePreviewGrid"></div>
@@ -691,7 +708,8 @@
     const qtyButtons = document.querySelectorAll(".qtyChip");
     const customQtyInput = $("customQtyInput");
     const ecdNameInput = $("ecdNameInput");
-    const pickEvidenceBtn = $("pickEvidenceBtn");
+   const openCameraBtn = $("openCameraBtn");
+const pickGalleryBtn = $("pickGalleryBtn");
 
     brandButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -728,13 +746,21 @@
       });
     }
 
-    if (pickEvidenceBtn) {
-      pickEvidenceBtn.addEventListener("click", () => {
-        if (!els.evidenceInput) return;
-        els.evidenceInput.value = "";
-        els.evidenceInput.click();
-      });
-    }
+   if (openCameraBtn) {
+  openCameraBtn.addEventListener("click", () => {
+    if (!els.cameraInput) return;
+    els.cameraInput.value = "";
+    els.cameraInput.click();
+  });
+}
+
+if (pickGalleryBtn) {
+  pickGalleryBtn.addEventListener("click", () => {
+    if (!els.uploadInput) return;
+    els.uploadInput.value = "";
+    els.uploadInput.click();
+  });
+}
 
     updateEvidencePreview();
   }
@@ -766,13 +792,13 @@
 
     const ecdName = String(ecdNameInput.value || "").trim().toUpperCase();
 
-    if (!ecdName) {
-      throw new Error("กรุณากรอกชื่อ ECD");
-    }
+   if (!ecdName) {
+  throw new Error("กรุณากรอกหมายเลขเอกสาร ECD");
+}
 
-    if (!ECD_REGEX.test(ecdName)) {
-      throw new Error("ชื่อ ECD กรอกได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
-    }
+if (!ECD_REGEX.test(ecdName)) {
+  throw new Error("หมายเลขเอกสาร ECD กรอกได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
+}
 
     if (state.selectedEvidenceFiles.length < CONFIG.MIN_IMAGES) {
       throw new Error("กรุณาแนบรูปหลักฐานอย่างน้อย 1 รูป");
