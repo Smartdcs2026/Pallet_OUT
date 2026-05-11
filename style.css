@@ -1278,3 +1278,127 @@ img {
     grid-column: auto;
   }
 }
+/* =========================
+   BRAND IMAGE - IMPROVED
+========================= */
+
+.brandSelectGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.brandOption {
+  min-height: 170px;
+  padding: 12px;
+  border-radius: 20px;
+}
+
+.brandImageBox {
+  width: 100%;
+  height: 112px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #dbe3ea;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.brandImageBox img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8px;
+}
+
+.brandOption strong {
+  font-size: 1.08rem;
+  line-height: 1.1;
+}
+
+
+/* =========================
+   CAMERA DIALOG
+========================= */
+
+.cameraDialog {
+  display: grid;
+  gap: 10px;
+}
+
+.liveCameraVideo {
+  width: 100%;
+  max-height: 62vh;
+  border-radius: 18px;
+  background: #020617;
+  object-fit: contain;
+  border: 1px solid #dbe3ea;
+}
+
+.liveCameraCanvas {
+  display: none;
+}
+
+.cameraHint {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+
+/* =========================
+   MOBILE BRAND / CAMERA
+========================= */
+
+@media (max-width: 640px) {
+  .brandSelectGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .brandOption {
+    min-height: 150px;
+    padding: 10px;
+  }
+
+  .brandImageBox {
+    height: 96px;
+  }
+
+  .brandImageBox img {
+    padding: 6px;
+  }
+
+  .brandOption strong {
+    font-size: 1rem;
+  }
+
+  .liveCameraVideo {
+    max-height: 58vh;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .brandSelectGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .brandOption {
+    min-height: 168px;
+  }
+
+  .brandImageBox {
+    height: 116px;
+  }
+
+  .brandOption strong {
+    font-size: 1.08rem;
+  }
+}
