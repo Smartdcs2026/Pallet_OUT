@@ -65,8 +65,9 @@
 
     currentUserName: $("currentUserName"),
     logoutBtn: $("logoutBtn"),
-    refreshBtn: $("refreshBtn"),
-    emptyRefreshBtn: $("emptyRefreshBtn"),
+   refreshBtn: $("refreshBtn"),
+emptyRefreshBtn: $("emptyRefreshBtn"),
+openEditOutboundBtn: $("openEditOutboundBtn"),
 
     searchInput: $("searchInput"),
     openCountText: $("openCountText"),
@@ -130,7 +131,11 @@
     if (els.refreshBtn) {
       els.refreshBtn.addEventListener("click", () => loadInboundRows(true));
     }
-
+    if (els.openEditOutboundBtn) {
+  els.openEditOutboundBtn.addEventListener("click", async () => {
+    await handleEditOutboundSearch();
+  });
+}
     if (els.emptyRefreshBtn) {
       els.emptyRefreshBtn.addEventListener("click", () => loadInboundRows(true));
     }
@@ -645,14 +650,10 @@
               </button>
 
               <div id="manageMenu" class="manageMenu isHidden">
-                <button id="suppressInboundBtn" type="button" class="manageMenuBtn danger">
-                  ซ่อนรายการนี้
-                </button>
-
-                <button id="editOutboundBtn" type="button" class="manageMenuBtn edit">
-                  แก้ไขข้อมูล
-                </button>
-              </div>
+  <button id="suppressInboundBtn" type="button" class="manageMenuBtn danger">
+    ซ่อนรายการนี้
+  </button>
+</div>
             </div>
           </div>
 
@@ -842,7 +843,7 @@
     const manageDataBtn = $("manageDataBtn");
     const manageMenu = $("manageMenu");
     const suppressInboundBtn = $("suppressInboundBtn");
-    const editOutboundBtn = $("editOutboundBtn");
+  
 
     const openCameraBtn = $("openCameraBtn");
     const captureCameraBtn = $("captureCameraBtn");
@@ -918,12 +919,7 @@
       });
     }
 
-   if (editOutboundBtn) {
-  editOutboundBtn.addEventListener("click", async () => {
-    await handleEditOutboundSearch();
-  });
-}
-
+ 
     if (openCameraBtn) {
       openCameraBtn.addEventListener("click", async () => {
         await openInlineCamera();
@@ -1503,7 +1499,7 @@ async function handleEditOutboundSearch() {
         </div>
 
         <div class="confirmNote">
-          ระบบจะค้นหารายการพาเลทขาออกที่บันทึกไว้แล้วในวันที่เลือก เพื่อนำมาแก้ไขหรือลบแบบ Soft Delete
+          เลือกวันที่ที่ต้องการตรวจสอบ ระบบจะดึงรายการพาเลทขาออกที่บันทึกไว้แล้วในวันนั้นมาให้แก้ไขหรือลบรายการ
         </div>
       </div>
     `,
