@@ -2048,3 +2048,69 @@ img {
     font-size: 0.64rem;
   }
 }
+/* =====================================================
+   TOOLBAR EDIT BUTTON
+   ปุ่มแก้ไขข้อมูลหน้า Main Form
+===================================================== */
+
+.toolbarActions {
+  display: flex;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.toolbarActions .primaryBtn,
+.toolbarActions .secondaryBtn {
+  white-space: nowrap;
+}
+
+.toolbarEditBtn {
+  background: var(--success);
+  border-color: #86efac;
+  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.18);
+}
+
+.toolbarEditBtn:hover {
+  background: var(--success-dark);
+}
+
+
+/* มือถือ */
+@media (max-width: 640px) {
+  .toolbarMain {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbarActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    width: 100%;
+  }
+
+  .toolbarActions .primaryBtn,
+  .toolbarActions .secondaryBtn {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 9px;
+    font-size: 0.82rem;
+  }
+}
+
+
+/* มือถือจอเล็ก */
+@media (max-width: 420px) {
+  .toolbarActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .toolbarActions .primaryBtn,
+  .toolbarActions .secondaryBtn {
+    min-height: 35px;
+    padding: 7px 7px;
+    font-size: 0.74rem;
+  }
+}
