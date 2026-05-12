@@ -44,7 +44,12 @@
     selectedEvidencePayloads: [],
     selectedBrand: "",
     selectedQty: "",
-    isSubmitting: false
+    isSubmitting: false,
+editEvidence: {
+  keepImageIds: [],
+  newFiles: [],
+  newPayloads: []
+}
   };
 
   let inlineCameraStream = null;
@@ -1733,113 +1738,157 @@
   }
 
   async function openEditOutboundDialog(row, datePayload) {
-    const brandOptions = buildBrandSelectOptions(row.brandOut);
+  const brandOptions = buildBrandSelectOptions(row.brandOut);
 
-    const result = await Swal.fire({
-      title: "แก้ไขรายการขาออก",
-      html: `
-        <div class="editOutboundDialog">
-          <section class="dialogSection">
-            <h3>ข้อมูลอ้างอิง</h3>
+  state.editEvidence = {
+    keepImageIds: splitImageIds(row.imageIds),
+    newFiles: [],
+    newPayloads: []
+  };
 
-            <div class="dialogInfoGrid">
-              ${dialogInfo("Outbound ID", row.outboundId)}
-              ${dialogInfo("Auto ID", row.autoId)}
-              ${dialogInfo("ทะเบียนรถ", row.plateNo)}
-              ${dialogInfo("พขร.", row.driverFullName)}
-              ${dialogInfo("เวลาออก", row.timestampOut)}
-              ${dialogInfo("Duration", row.duration)}
-            </div>
+  const result = await Swal.fire({
+    title: "แก้ไขรายการขาออก",
+    html: `
+      <div class="editOutboundDialog">
+        <section class="dialogSection">
+          <h3>ข้อมูลอ้างอิง</h3>
 
-            <div class="confirmNote">
-              ข้อมูลเวลาออก, Duration, Auto ID, ทะเบียนรถ และข้อมูล พขร. จะไม่ถูกแก้ไข
-            </div>
-          </section>
+          <div class="dialogInfoGrid">
+            ${dialogInfo("Outbound ID", row.outboundId)}
+            ${dialogInfo("Auto ID", row.autoId)}
+            ${dialogInfo("ทะเบียนรถ", row.plateNo)}
+            ${dialogInfo("พขร.", row.driverFullName)}
+            ${dialogInfo("เวลาออก", row.timestampOut)}
+            ${dialogInfo("Duration", row.duration)}
+          </div>
 
-          <section class="dialogSection">
-            <h3>ข้อมูลที่แก้ไขได้</h3>
+          <div class="confirmNote">
+            ข้อมูลเวลาออก, Duration, Auto ID, ทะเบียนรถ และข้อมูล พขร. จะไม่ถูกแก้ไข
+          </div>
+        </section>
 
-            <div class="docPairGrid">
-              <div class="fieldGroup">
-                <label for="editBrandOutInput">ยี่ห้อพาเลทขาออก <em>*</em></label>
-                <select id="editBrandOutInput" class="dialogInput">
-                  ${brandOptions}
-                </select>
-              </div>
+        <section class="dialogSection">
+          <h3>ข้อมูลที่แก้ไขได้</h3>
 
-              <div class="fieldGroup">
-                <label for="editQtyOutInput">จำนวนพาเลทขาออก <em>*</em></label>
-                <input
-                  id="editQtyOutInput"
-                  class="dialogInput"
-                  type="number"
-                  inputmode="numeric"
-                  min="1"
-                  step="1"
-                  value="${escapeAttr(row.qtyOut || "")}"
-                >
-              </div>
-            </div>
-
-            <div class="docPairGrid">
-              <div class="fieldGroup">
-                <label for="editEcdInput">หมายเลขเอกสาร ECD <em>*</em></label>
-                <input
-                  id="editEcdInput"
-                  class="dialogInput"
-                  type="text"
-                  inputmode="latin"
-                  maxlength="30"
-                  value="${escapeAttr(row.ecdName || "")}"
-                >
-              </div>
-
-              <div class="fieldGroup">
-                <label for="editTcrInput">หมายเลขเอกสาร TCR <em>*</em></label>
-                <input
-                  id="editTcrInput"
-                  class="dialogInput"
-                  type="text"
-                  inputmode="latin"
-                  maxlength="30"
-                  value="${escapeAttr(row.tcrNo || "")}"
-                >
-              </div>
+          <div class="docPairGrid">
+            <div class="fieldGroup">
+              <label for="editBrandOutInput">ยี่ห้อพาเลทขาออก <em>*</em></label>
+              <select id="editBrandOutInput" class="dialogInput">
+                ${brandOptions}
+              </select>
             </div>
 
             <div class="fieldGroup">
-              <label for="editNoteInput">หมายเหตุ</label>
-              <textarea
-                id="editNoteInput"
-                class="dialogTextarea"
-                rows="3"
-              >${escapeHtml(row.note || "")}</textarea>
+              <label for="editQtyOutInput">จำนวนพาเลทขาออก <em>*</em></label>
+              <input
+                id="editQtyOutInput"
+                class="dialogInput"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                step="1"
+                value="${escapeAttr(row.qtyOut || "")}"
+              >
+            </div>
+          </div>
+
+          <div class="docPairGrid">
+            <div class="fieldGroup">
+              <label for="editEcdInput">หมายเลขเอกสาร ECD <em>*</em></label>
+              <input
+                id="editEcdInput"
+                class="dialogInput"
+                type="text"
+                inputmode="latin"
+                maxlength="30"
+                value="${escapeAttr(row.ecdName || "")}"
+              >
             </div>
 
-            <div class="helpText">
-              รอบนี้แก้ไขเฉพาะข้อมูลตัวอักษร/จำนวนก่อน ส่วนรูปหลักฐานยังคงของเดิม
+            <div class="fieldGroup">
+              <label for="editTcrInput">หมายเลขเอกสาร TCR <em>*</em></label>
+              <input
+                id="editTcrInput"
+                class="dialogInput"
+                type="text"
+                inputmode="latin"
+                maxlength="30"
+                value="${escapeAttr(row.tcrNo || "")}"
+              >
             </div>
-          </section>
-        </div>
-      `,
-      width: 820,
-      showCancelButton: true,
-      confirmButtonText: "บันทึกการแก้ไข",
-      cancelButtonText: "ยกเลิก",
-      reverseButtons: true,
-      focusConfirm: false,
-      didOpen: () => {
-        initEditOutboundInputFilters();
-      },
-      preConfirm: () => {
-        return collectEditOutboundPayload(row);
-      }
-    });
+          </div>
 
-    if (!result.isConfirmed || !result.value) return;
+          <div class="fieldGroup">
+            <label for="editNoteInput">หมายเหตุ</label>
+            <textarea
+              id="editNoteInput"
+              class="dialogTextarea"
+              rows="3"
+            >${escapeHtml(row.note || "")}</textarea>
+          </div>
+        </section>
 
-    await submitUpdateOutbound(result.value, datePayload);
-  }
+        <section class="dialogSection">
+          <h3>รูปหลักฐาน</h3>
+
+          <div class="evidenceControl">
+            <button id="editPickGalleryBtn" type="button" class="secondaryBtn">
+              เพิ่มรูปจากเครื่อง
+            </button>
+
+            <button id="editOpenCameraBtn" type="button" class="secondaryBtn">
+              เปิดกล้อง/ถ่ายภาพ
+            </button>
+
+            <span id="editEvidenceCountText" class="evidenceCount">
+              กำลังโหลดรูป
+            </span>
+          </div>
+
+          <input
+            id="editGalleryInput"
+            class="hiddenFileInput"
+            type="file"
+            accept="image/*"
+            multiple
+          >
+
+          <input
+            id="editCameraInput"
+            class="hiddenFileInput"
+            type="file"
+            accept="image/*"
+            capture="environment"
+          >
+
+          <div class="helpText">
+            เก็บรูปเดิมไว้ได้ ลบรูปเดิมออกจากรายการได้ และเพิ่มรูปใหม่ได้ รวมทั้งหมดสูงสุด ${CONFIG.MAX_IMAGES} รูป
+          </div>
+
+          <div id="editEvidencePreviewGrid" class="evidencePreviewGrid"></div>
+        </section>
+      </div>
+    `,
+    width: 860,
+    showCancelButton: true,
+    confirmButtonText: "บันทึกการแก้ไข",
+    cancelButtonText: "ยกเลิก",
+    reverseButtons: true,
+    focusConfirm: false,
+    didOpen: () => {
+      initEditOutboundInputFilters();
+      initEditEvidenceEvents();
+      updateEditEvidencePreview();
+    },
+    preConfirm: async () => {
+      return await collectEditOutboundPayload(row);
+    }
+  });
+
+  if (!result.isConfirmed || !result.value) return;
+
+  await submitUpdateOutbound(result.value, datePayload);
+}
 
   function initEditOutboundInputFilters() {
     const ecd = $("editEcdInput");
@@ -1858,61 +1907,264 @@
     }
   }
 
-  function collectEditOutboundPayload(row) {
-    const brandInput = $("editBrandOutInput");
-    const qtyInput = $("editQtyOutInput");
-    const ecdInput = $("editEcdInput");
-    const tcrInput = $("editTcrInput");
-    const noteInput = $("editNoteInput");
+ async function collectEditOutboundPayload(row) {
+  const brandInput = $("editBrandOutInput");
+  const qtyInput = $("editQtyOutInput");
+  const ecdInput = $("editEcdInput");
+  const tcrInput = $("editTcrInput");
+  const noteInput = $("editNoteInput");
 
-    const brandOut = String(brandInput ? brandInput.value || "" : "")
-      .trim()
-      .toUpperCase();
+  const brandOut = String(brandInput ? brandInput.value || "" : "")
+    .trim()
+    .toUpperCase();
 
-    const qtyOut = Number(qtyInput ? qtyInput.value || 0 : 0);
+  const qtyOut = Number(qtyInput ? qtyInput.value || 0 : 0);
 
-    const ecdName = String(ecdInput ? ecdInput.value || "" : "")
-      .trim()
-      .toUpperCase();
+  const ecdName = String(ecdInput ? ecdInput.value || "" : "")
+    .trim()
+    .toUpperCase();
 
-    const tcrNo = String(tcrInput ? tcrInput.value || "" : "")
-      .trim()
-      .toUpperCase();
+  const tcrNo = String(tcrInput ? tcrInput.value || "" : "")
+    .trim()
+    .toUpperCase();
 
-    const note = String(noteInput ? noteInput.value || "" : "").trim();
+  const note = String(noteInput ? noteInput.value || "" : "").trim();
 
-    if (!brandOut) {
-      Swal.showValidationMessage("กรุณาเลือกยี่ห้อพาเลทขาออก");
-      return false;
-    }
-
-    if (!Number.isFinite(qtyOut) || qtyOut <= 0) {
-      Swal.showValidationMessage("กรุณาระบุจำนวนพาเลทขาออกเป็นตัวเลขมากกว่า 0");
-      return false;
-    }
-
-    if (!ecdName || !ECD_REGEX.test(ecdName)) {
-      Swal.showValidationMessage("ECD ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
-      return false;
-    }
-
-    if (!tcrNo || !TCR_REGEX.test(tcrNo)) {
-      Swal.showValidationMessage("TCR ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
-      return false;
-    }
-
-    return {
-      outboundId: row.outboundId,
-      brandOut,
-      qtyOut: Math.floor(qtyOut),
-      ecdName,
-      tcrNo,
-      note,
-      updatedBy: state.currentUser,
-      recordedBy: state.currentUser
-    };
+  if (!brandOut) {
+    Swal.showValidationMessage("กรุณาเลือกยี่ห้อพาเลทขาออก");
+    return false;
   }
 
+  if (!Number.isFinite(qtyOut) || qtyOut <= 0) {
+    Swal.showValidationMessage("กรุณาระบุจำนวนพาเลทขาออกเป็นตัวเลขมากกว่า 0");
+    return false;
+  }
+
+  if (!ecdName || !ECD_REGEX.test(ecdName)) {
+    Swal.showValidationMessage("ECD ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
+    return false;
+  }
+
+  if (!tcrNo || !TCR_REGEX.test(tcrNo)) {
+    Swal.showValidationMessage("TCR ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
+    return false;
+  }
+
+  const keepImageIds = Array.isArray(state.editEvidence.keepImageIds)
+    ? state.editEvidence.keepImageIds
+    : [];
+
+  const newFiles = Array.isArray(state.editEvidence.newFiles)
+    ? state.editEvidence.newFiles
+    : [];
+
+  const totalImages = keepImageIds.length + newFiles.length;
+
+  if (totalImages < CONFIG.MIN_IMAGES) {
+    Swal.showValidationMessage("ต้องมีรูปหลักฐานอย่างน้อย 1 รูป");
+    return false;
+  }
+
+  if (totalImages > CONFIG.MAX_IMAGES) {
+    Swal.showValidationMessage("รูปหลักฐานรวมทั้งหมดได้สูงสุด " + CONFIG.MAX_IMAGES + " รูป");
+    return false;
+  }
+
+  if (newFiles.length && !state.editEvidence.newPayloads.length) {
+    state.editEvidence.newPayloads = await compressSelectedImages(newFiles);
+  }
+
+  return {
+    outboundId: row.outboundId,
+    brandOut,
+    qtyOut: Math.floor(qtyOut),
+    ecdName,
+    tcrNo,
+    note,
+    updatedBy: state.currentUser,
+    recordedBy: state.currentUser,
+
+    imageEdit: true,
+    keepImageIds: keepImageIds,
+    images: state.editEvidence.newPayloads || []
+  };
+}
+function splitImageIds(value) {
+  return String(value || "")
+    .split("|")
+    .map((x) => String(x || "").trim())
+    .filter(Boolean);
+}
+
+
+function initEditEvidenceEvents() {
+  const pickBtn = $("editPickGalleryBtn");
+  const cameraBtn = $("editOpenCameraBtn");
+  const galleryInput = $("editGalleryInput");
+  const cameraInput = $("editCameraInput");
+
+  if (pickBtn && galleryInput) {
+    pickBtn.addEventListener("click", () => {
+      galleryInput.value = "";
+      galleryInput.click();
+    });
+  }
+
+  if (cameraBtn && cameraInput) {
+    cameraBtn.addEventListener("click", () => {
+      cameraInput.value = "";
+      cameraInput.click();
+    });
+  }
+
+  if (galleryInput) {
+    galleryInput.addEventListener("change", async (ev) => {
+      await addEditEvidenceFiles(Array.from(ev.target.files || []));
+    });
+  }
+
+  if (cameraInput) {
+    cameraInput.addEventListener("change", async (ev) => {
+      await addEditEvidenceFiles(Array.from(ev.target.files || []));
+    });
+  }
+}
+
+
+async function addEditEvidenceFiles(files) {
+  const imageFiles = Array.from(files || []).filter((file) => {
+    return file && file.type && file.type.indexOf("image/") === 0;
+  });
+
+  if (!imageFiles.length) {
+    Swal.showValidationMessage("กรุณาเลือกเฉพาะไฟล์รูปภาพ");
+    return;
+  }
+
+  const currentCount =
+    state.editEvidence.keepImageIds.length +
+    state.editEvidence.newFiles.length;
+
+  const remaining = CONFIG.MAX_IMAGES - currentCount;
+
+  if (remaining <= 0) {
+    await Swal.fire({
+      icon: "warning",
+      title: "เพิ่มรูปไม่ได้",
+      text: "รูปหลักฐานรวมทั้งหมดได้สูงสุด " + CONFIG.MAX_IMAGES + " รูป",
+      confirmButtonText: "ตกลง"
+    });
+    return;
+  }
+
+  const filesToAdd = imageFiles.slice(0, remaining);
+
+  state.editEvidence.newFiles = state.editEvidence.newFiles.concat(filesToAdd);
+  state.editEvidence.newPayloads = [];
+
+  updateEditEvidencePreview();
+
+  try {
+    const countText = $("editEvidenceCountText");
+    if (countText) countText.textContent = "กำลังเตรียมรูปภาพ...";
+
+    state.editEvidence.newPayloads = await compressSelectedImages(state.editEvidence.newFiles);
+
+    updateEditEvidencePreview();
+
+  } catch (err) {
+    await showError(err);
+  }
+}
+
+
+function updateEditEvidencePreview() {
+  const grid = $("editEvidencePreviewGrid");
+  const countText = $("editEvidenceCountText");
+
+  const keepIds = state.editEvidence.keepImageIds || [];
+  const newFiles = state.editEvidence.newFiles || [];
+  const total = keepIds.length + newFiles.length;
+
+  if (countText) {
+    countText.textContent = total
+      ? `รูปหลักฐาน ${total}/${CONFIG.MAX_IMAGES} รูป`
+      : "ยังไม่มีรูปหลักฐาน";
+  }
+
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  keepIds.forEach((fileId, index) => {
+    const item = document.createElement("div");
+    item.className = "evidenceThumb editEvidenceThumb";
+    item.innerHTML = `
+      <img
+        src="https://lh5.googleusercontent.com/d/${escapeAttr(fileId)}"
+        alt="รูปเดิม ${index + 1}"
+        loading="lazy"
+      >
+      <span class="evidenceTag">รูปเดิม</span>
+      <button
+        type="button"
+        class="removeEvidenceBtn"
+        data-kind="old"
+        data-index="${index}"
+        aria-label="ลบรูปเดิม"
+      >×</button>
+    `;
+
+    const btn = item.querySelector(".removeEvidenceBtn");
+    if (btn) {
+      btn.addEventListener("click", () => {
+        state.editEvidence.keepImageIds.splice(index, 1);
+        updateEditEvidencePreview();
+      });
+    }
+
+    grid.appendChild(item);
+  });
+
+  newFiles.forEach((file, index) => {
+    const url = URL.createObjectURL(file);
+
+    const item = document.createElement("div");
+    item.className = "evidenceThumb editEvidenceThumb";
+    item.innerHTML = `
+      <img src="${url}" alt="รูปใหม่ ${index + 1}">
+      <span class="evidenceTag new">รูปใหม่</span>
+      <button
+        type="button"
+        class="removeEvidenceBtn"
+        data-kind="new"
+        data-index="${index}"
+        aria-label="ลบรูปใหม่"
+      >×</button>
+    `;
+
+    const btn = item.querySelector(".removeEvidenceBtn");
+    if (btn) {
+      btn.addEventListener("click", () => {
+        URL.revokeObjectURL(url);
+        state.editEvidence.newFiles.splice(index, 1);
+        state.editEvidence.newPayloads = [];
+        updateEditEvidencePreview();
+
+        if (state.editEvidence.newFiles.length) {
+          compressSelectedImages(state.editEvidence.newFiles)
+            .then((payloads) => {
+              state.editEvidence.newPayloads = payloads;
+              updateEditEvidencePreview();
+            })
+            .catch(showError);
+        }
+      });
+    }
+
+    grid.appendChild(item);
+  });
+}
   async function submitUpdateOutbound(payload, datePayload) {
     try {
       Swal.fire({
@@ -1940,6 +2192,7 @@
             <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || "-")}</strong></div>
             <div><span>ผู้แก้ไข</span><strong>${escapeHtml(res.updatedBy || state.currentUser || "-")}</strong></div>
             <div><span>เวลาแก้ไข</span><strong>${escapeHtml(res.updatedAt || "-")}</strong></div>
+            <div><span>รูปหลักฐาน</span><strong>${escapeHtml(res.imageIds ? splitImageIds(res.imageIds).length + " รูป" : "-")}</strong></div>
           </div>
         `,
         confirmButtonText: "กลับไปดูรายการ"
