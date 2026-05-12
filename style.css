@@ -2114,3 +2114,52 @@ img {
     font-size: 0.74rem;
   }
 }
+/* =====================================================
+   EDIT EVIDENCE
+===================================================== */
+
+.editEvidenceThumb {
+  position: relative;
+}
+
+.evidenceTag {
+  position: absolute;
+  left: 5px;
+  bottom: 5px;
+  z-index: 2;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  color: #ffffff;
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.evidenceTag.new {
+  background: rgba(15, 118, 110, 0.9);
+}
+
+.editOutboundDialog .evidencePreviewGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+  .editOutboundDialog .evidencePreviewGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .evidenceTag {
+    left: 3px;
+    bottom: 3px;
+    padding: 2px 5px;
+    font-size: 0.56rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .editOutboundDialog .evidencePreviewGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
