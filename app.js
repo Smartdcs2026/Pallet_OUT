@@ -65,9 +65,9 @@
 
     currentUserName: $("currentUserName"),
     logoutBtn: $("logoutBtn"),
-   refreshBtn: $("refreshBtn"),
-emptyRefreshBtn: $("emptyRefreshBtn"),
-openEditOutboundBtn: $("openEditOutboundBtn"),
+    refreshBtn: $("refreshBtn"),
+    emptyRefreshBtn: $("emptyRefreshBtn"),
+    openEditOutboundBtn: $("openEditOutboundBtn"),
 
     searchInput: $("searchInput"),
     openCountText: $("openCountText"),
@@ -131,11 +131,13 @@ openEditOutboundBtn: $("openEditOutboundBtn"),
     if (els.refreshBtn) {
       els.refreshBtn.addEventListener("click", () => loadInboundRows(true));
     }
+
     if (els.openEditOutboundBtn) {
-  els.openEditOutboundBtn.addEventListener("click", async () => {
-    await handleEditOutboundSearch();
-  });
-}
+      els.openEditOutboundBtn.addEventListener("click", async () => {
+        await handleEditOutboundSearch();
+      });
+    }
+
     if (els.emptyRefreshBtn) {
       els.emptyRefreshBtn.addEventListener("click", () => loadInboundRows(true));
     }
@@ -650,10 +652,10 @@ openEditOutboundBtn: $("openEditOutboundBtn"),
               </button>
 
               <div id="manageMenu" class="manageMenu isHidden">
-  <button id="suppressInboundBtn" type="button" class="manageMenuBtn danger">
-    ซ่อนรายการนี้
-  </button>
-</div>
+                <button id="suppressInboundBtn" type="button" class="manageMenuBtn danger">
+                  ซ่อนรายการนี้
+                </button>
+              </div>
             </div>
           </div>
 
@@ -843,7 +845,6 @@ openEditOutboundBtn: $("openEditOutboundBtn"),
     const manageDataBtn = $("manageDataBtn");
     const manageMenu = $("manageMenu");
     const suppressInboundBtn = $("suppressInboundBtn");
-  
 
     const openCameraBtn = $("openCameraBtn");
     const captureCameraBtn = $("captureCameraBtn");
@@ -919,7 +920,6 @@ openEditOutboundBtn: $("openEditOutboundBtn"),
       });
     }
 
- 
     if (openCameraBtn) {
       openCameraBtn.addEventListener("click", async () => {
         await openInlineCamera();
@@ -1479,588 +1479,576 @@ openEditOutboundBtn: $("openEditOutboundBtn"),
     }
   }
 
-async function handleEditOutboundSearch() {
-  stopInlineCamera();
+  async function handleEditOutboundSearch() {
+    stopInlineCamera();
 
-  const todayIso = toDateInputValue(new Date());
+    const todayIso = toDateInputValue(new Date());
 
-  const result = await Swal.fire({
-    title: "ค้นหารายการขาออกย้อนหลัง",
-    html: `
-      <div class="editSearchBox">
-        <div class="fieldGroup">
-          <label for="outboundSearchDate">เลือกวันที่บันทึกขาออก</label>
-          <input
-            id="outboundSearchDate"
-            class="dialogInput"
-            type="date"
-            value="${escapeAttr(todayIso)}"
-          >
-        </div>
-
-        <div class="confirmNote">
-          เลือกวันที่ที่ต้องการตรวจสอบ ระบบจะดึงรายการพาเลทขาออกที่บันทึกไว้แล้วในวันนั้นมาให้แก้ไขหรือลบรายการ
-        </div>
-      </div>
-    `,
-    width: 560,
-    showCancelButton: true,
-    confirmButtonText: "ค้นหารายการ",
-    cancelButtonText: "ยกเลิก",
-    reverseButtons: true,
-    focusConfirm: false,
-    preConfirm: () => {
-      const input = $("outboundSearchDate");
-      const isoDate = String(input ? input.value || "" : "").trim();
-
-      if (!isoDate) {
-        Swal.showValidationMessage("กรุณาเลือกวันที่");
-        return false;
-      }
-
-      const displayDate = isoDateToDisplayDate(isoDate);
-
-      if (!displayDate) {
-        Swal.showValidationMessage("รูปแบบวันที่ไม่ถูกต้อง");
-        return false;
-      }
-
-      return displayDate;
-    }
-  });
-
-  if (!result.isConfirmed || !result.value) return;
-
-  await openOutboundHistoryDialog(result.value);
-}
-
-
-async function openOutboundHistoryDialog(dateText) {
-  try {
-    Swal.fire({
-      title: "กำลังค้นหารายการ",
-      html: "กรุณารอสักครู่ ระบบกำลังดึงข้อมูลขาออกย้อนหลัง",
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      didOpen: () => {
-        Swal.showLoading();
-      }
-    });
-
-    const res = await apiGet(
-      "/api/outbound-by-date?date=" + encodeURIComponent(dateText),
-      60000
-    );
-
-    if (!res.ok) {
-      throw new Error(res.message || "ค้นหารายการขาออกย้อนหลังไม่สำเร็จ");
-    }
-
-    const rows = Array.isArray(res.rows) ? res.rows : [];
-
-    await Swal.fire({
-      title: "รายการขาออกวันที่ " + escapeHtml(res.date || dateText),
-      html: buildOutboundHistoryHtml(rows, res.date || dateText),
-      width: 900,
-      showConfirmButton: false,
-      showCloseButton: true,
-      didOpen: () => {
-        initOutboundHistoryEvents(rows, res.date || dateText);
-      }
-    });
-
-  } catch (err) {
-    await showError(err);
-  }
-}
-
-
-function buildOutboundHistoryHtml(rows, dateText) {
-  if (!rows.length) {
-    return `
-      <div class="emptyEditResult">
-        <div class="emptyIcon">✓</div>
-        <h3>ไม่พบรายการขาออก</h3>
-        <p>ไม่พบข้อมูลที่บันทึกขาออกในวันที่ ${escapeHtml(dateText)}</p>
-
-        <button id="searchOutboundAgainBtn" type="button" class="secondaryBtn">
-          เลือกวันที่ใหม่
-        </button>
-      </div>
-    `;
-  }
-
-  const cards = rows.map((row) => {
-    const updatedText = row.updatedBy || row.updatedAt
-      ? `
-        <div class="editAuditLine">
-          แก้ไขล่าสุด: ${escapeHtml(row.updatedBy || "-")}
-          ${row.updatedAt ? " / " + escapeHtml(row.updatedAt) : ""}
-        </div>
-      `
-      : `
-        <div class="editAuditLine muted">
-          ยังไม่มีประวัติการแก้ไข
-        </div>
-      `;
-
-    return `
-      <article class="outboundHistoryCard" data-outbound-id="${escapeAttr(row.outboundId || "")}">
-        <div class="outboundHistoryHead">
-          <div>
-            <div class="plateText">${escapeHtml(row.plateNo || "-")}</div>
-            <div class="autoIdText">Outbound ID: ${escapeHtml(row.outboundId || "-")}</div>
-            <div class="autoIdText">Auto ID: ${escapeHtml(row.autoId || "-")}</div>
+    const result = await Swal.fire({
+      title: "ค้นหารายการขาออกย้อนหลัง",
+      html: `
+        <div class="editSearchBox">
+          <div class="fieldGroup">
+            <label for="outboundSearchDate">เลือกวันที่บันทึกขาออก</label>
+            <input
+              id="outboundSearchDate"
+              class="dialogInput"
+              type="date"
+              value="${escapeAttr(todayIso)}"
+            >
           </div>
 
-          <span class="brandBadge ${String(row.brandOut || "").toUpperCase() === "CHEP" ? "brandChep" : "brandLoscam"}">
-            ${escapeHtml(row.brandOut || "-")}
-          </span>
+          <div class="confirmNote">
+            เลือกวันที่ที่ต้องการตรวจสอบ ระบบจะค้นหารายการพาเลทขาออกที่บันทึกไว้แล้วในวันนั้น
+          </div>
         </div>
+      `,
+      width: 560,
+      showCancelButton: true,
+      confirmButtonText: "ค้นหารายการ",
+      cancelButtonText: "ยกเลิก",
+      reverseButtons: true,
+      focusConfirm: false,
+      preConfirm: () => {
+        const isoDate = getDateInputIsoValue("outboundSearchDate");
 
-        <div class="dialogInfoGrid outboundHistoryInfo">
-          ${dialogInfo("เวลาออก", row.timestampOut)}
-          ${dialogInfo("พขร.", row.driverFullName)}
-          ${dialogInfo("จำนวน", row.qtyOut)}
-          ${dialogInfo("ECD", row.ecdName)}
-          ${dialogInfo("TCR", row.tcrNo)}
-          ${dialogInfo("ผู้บันทึก", row.recordedBy)}
-        </div>
+        if (!isoDate) {
+          Swal.showValidationMessage("กรุณาเลือกวันที่ให้ถูกต้อง");
+          return false;
+        }
 
-        ${updatedText}
-
-        <div class="outboundHistoryActions">
-          <button
-            type="button"
-            class="secondaryBtn editOutboundRowBtn"
-            data-action="edit"
-            data-outbound-id="${escapeAttr(row.outboundId || "")}"
-          >
-            แก้ไข
-          </button>
-
-          <button
-            type="button"
-            class="secondaryBtn dangerSoftBtn deleteOutboundRowBtn"
-            data-action="delete"
-            data-outbound-id="${escapeAttr(row.outboundId || "")}"
-          >
-            ลบรายการนี้
-          </button>
-        </div>
-      </article>
-    `;
-  }).join("");
-
-  return `
-    <div class="outboundHistoryWrap">
-      <div class="outboundHistoryToolbar">
-        <button id="searchOutboundAgainBtn" type="button" class="secondaryBtn">
-          เลือกวันที่ใหม่
-        </button>
-
-        <span>พบ ${rows.length} รายการ</span>
-      </div>
-
-      <div id="outboundHistoryList" class="outboundHistoryList">
-        ${cards}
-      </div>
-    </div>
-  `;
-}
-
-
-function initOutboundHistoryEvents(rows, dateText) {
-  const list = $("outboundHistoryList");
-  const searchAgainBtn = $("searchOutboundAgainBtn");
-
-  if (searchAgainBtn) {
-    searchAgainBtn.addEventListener("click", async () => {
-      await handleEditOutboundSearch();
+        return {
+          apiDate: isoDate,
+          displayDate: isoDateToDisplayDate(isoDate)
+        };
+      }
     });
+
+    if (!result.isConfirmed || !result.value) return;
+
+    await openOutboundHistoryDialog(result.value);
   }
 
-  if (!list) return;
+  async function openOutboundHistoryDialog(datePayload) {
+    const normalizedPayload = normalizeDatePayload(datePayload);
+    const apiDate = normalizedPayload.apiDate;
+    const displayDate = normalizedPayload.displayDate;
 
-  const rowMap = {};
-  rows.forEach((row) => {
-    rowMap[String(row.outboundId || "").trim()] = row;
-  });
-
-  list.addEventListener("click", async (ev) => {
-    const btn = ev.target.closest("button[data-action]");
-    if (!btn) return;
-
-    const action = String(btn.dataset.action || "");
-    const outboundId = String(btn.dataset.outboundId || "").trim();
-    const row = rowMap[outboundId];
-
-    if (!row) {
+    if (!apiDate) {
       await Swal.fire({
-        icon: "error",
-        title: "ไม่พบข้อมูลรายการ",
-        text: "ไม่พบ Outbound ID ที่เลือก",
+        icon: "warning",
+        title: "ไม่พบวันที่",
+        text: "กรุณาเลือกวันที่ที่ต้องการค้นหาอีกครั้ง",
         confirmButtonText: "ตกลง"
       });
       return;
     }
 
-    if (action === "edit") {
-      await openEditOutboundDialog(row, dateText);
-      return;
-    }
-
-    if (action === "delete") {
-      await confirmDeleteOutbound(row, dateText);
-    }
-  });
-}
-
-
-async function openEditOutboundDialog(row, dateText) {
-  const brandOptions = buildBrandSelectOptions(row.brandOut);
-
-  const result = await Swal.fire({
-    title: "แก้ไขรายการขาออก",
-    html: `
-      <div class="editOutboundDialog">
-        <section class="dialogSection">
-          <h3>ข้อมูลอ้างอิง</h3>
-
-          <div class="dialogInfoGrid">
-            ${dialogInfo("Outbound ID", row.outboundId)}
-            ${dialogInfo("Auto ID", row.autoId)}
-            ${dialogInfo("ทะเบียนรถ", row.plateNo)}
-            ${dialogInfo("พขร.", row.driverFullName)}
-            ${dialogInfo("เวลาออก", row.timestampOut)}
-            ${dialogInfo("Duration", row.duration)}
-          </div>
-
+    try {
+      Swal.fire({
+        title: "กำลังค้นหารายการ",
+        html: `
           <div class="confirmNote">
-            ข้อมูลเวลาออก, Duration, Auto ID, ทะเบียนรถ และข้อมูล พขร. จะไม่ถูกแก้ไข
+            กำลังค้นหาข้อมูลวันที่ ${escapeHtml(displayDate || apiDate)}
           </div>
-        </section>
+        `,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
 
-        <section class="dialogSection">
-          <h3>ข้อมูลที่แก้ไขได้</h3>
+      const res = await apiGet(
+        "/api/outbound-by-date?date=" + encodeURIComponent(apiDate) + "&_t=" + Date.now(),
+        60000
+      );
 
-          <div class="docPairGrid">
-            <div class="fieldGroup">
-              <label for="editBrandOutInput">ยี่ห้อพาเลทขาออก <em>*</em></label>
-              <select id="editBrandOutInput" class="dialogInput">
-                ${brandOptions}
-              </select>
-            </div>
+      if (!res.ok) {
+        throw new Error(res.message || "ค้นหารายการขาออกย้อนหลังไม่สำเร็จ");
+      }
 
-            <div class="fieldGroup">
-              <label for="editQtyOutInput">จำนวนพาเลทขาออก <em>*</em></label>
-              <input
-                id="editQtyOutInput"
-                class="dialogInput"
-                type="number"
-                inputmode="numeric"
-                min="1"
-                step="1"
-                value="${escapeAttr(row.qtyOut || "")}"
-              >
-            </div>
-          </div>
+      const rows = Array.isArray(res.rows) ? res.rows : [];
+      const resultDate = res.date || displayDate || apiDate;
 
-          <div class="docPairGrid">
-            <div class="fieldGroup">
-              <label for="editEcdInput">หมายเลขเอกสาร ECD <em>*</em></label>
-              <input
-                id="editEcdInput"
-                class="dialogInput"
-                type="text"
-                inputmode="latin"
-                maxlength="30"
-                value="${escapeAttr(row.ecdName || "")}"
-              >
-            </div>
+      await Swal.fire({
+        title: "รายการขาออกวันที่ " + escapeHtml(resultDate),
+        html: buildOutboundHistoryHtml(rows, resultDate),
+        width: 900,
+        showConfirmButton: false,
+        showCloseButton: true,
+        didOpen: () => {
+          initOutboundHistoryEvents(rows, {
+            apiDate,
+            displayDate: resultDate
+          });
+        }
+      });
 
-            <div class="fieldGroup">
-              <label for="editTcrInput">หมายเลขเอกสาร TCR <em>*</em></label>
-              <input
-                id="editTcrInput"
-                class="dialogInput"
-                type="text"
-                inputmode="latin"
-                maxlength="30"
-                value="${escapeAttr(row.tcrNo || "")}"
-              >
-            </div>
-          </div>
-
-          <div class="fieldGroup">
-            <label for="editNoteInput">หมายเหตุ</label>
-            <textarea
-              id="editNoteInput"
-              class="dialogTextarea"
-              rows="3"
-            >${escapeHtml(row.note || "")}</textarea>
-          </div>
-
-          <div class="helpText">
-            รอบนี้แก้ไขเฉพาะข้อมูลตัวอักษร/จำนวนก่อน ส่วนรูปหลักฐานยังคงของเดิม
-          </div>
-        </section>
-      </div>
-    `,
-    width: 820,
-    showCancelButton: true,
-    confirmButtonText: "บันทึกการแก้ไข",
-    cancelButtonText: "ยกเลิก",
-    reverseButtons: true,
-    focusConfirm: false,
-    didOpen: () => {
-      initEditOutboundInputFilters();
-    },
-    preConfirm: () => {
-      return collectEditOutboundPayload(row);
+    } catch (err) {
+      await showError(err);
     }
-  });
+  }
 
-  if (!result.isConfirmed || !result.value) return;
+  function buildOutboundHistoryHtml(rows, dateText) {
+    if (!rows.length) {
+      return `
+        <div class="emptyEditResult">
+          <div class="emptyIcon">✓</div>
+          <h3>ไม่พบรายการขาออก</h3>
+          <p>ไม่พบข้อมูลที่บันทึกขาออกในวันที่ ${escapeHtml(dateText)}</p>
 
-  await submitUpdateOutbound(result.value, dateText);
-}
+          <button id="searchOutboundAgainBtn" type="button" class="secondaryBtn">
+            เลือกวันที่ใหม่
+          </button>
+        </div>
+      `;
+    }
 
+    const cards = rows.map((row) => {
+      const updatedText = row.updatedBy || row.updatedAt
+        ? `
+          <div class="editAuditLine">
+            แก้ไขล่าสุด: ${escapeHtml(row.updatedBy || "-")}
+            ${row.updatedAt ? " / " + escapeHtml(row.updatedAt) : ""}
+          </div>
+        `
+        : `
+          <div class="editAuditLine muted">
+            ยังไม่มีประวัติการแก้ไข
+          </div>
+        `;
 
-function initEditOutboundInputFilters() {
-  const ecd = $("editEcdInput");
-  const tcr = $("editTcrInput");
+      return `
+        <article class="outboundHistoryCard" data-outbound-id="${escapeAttr(row.outboundId || "")}">
+          <div class="outboundHistoryHead">
+            <div>
+              <div class="plateText">${escapeHtml(row.plateNo || "-")}</div>
+              <div class="autoIdText">Outbound ID: ${escapeHtml(row.outboundId || "-")}</div>
+              <div class="autoIdText">Auto ID: ${escapeHtml(row.autoId || "-")}</div>
+            </div>
 
-  if (ecd) {
-    ecd.addEventListener("input", () => {
-      ecd.value = ecd.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+            <span class="brandBadge ${String(row.brandOut || "").toUpperCase() === "CHEP" ? "brandChep" : "brandLoscam"}">
+              ${escapeHtml(row.brandOut || "-")}
+            </span>
+          </div>
+
+          <div class="dialogInfoGrid outboundHistoryInfo">
+            ${dialogInfo("เวลาออก", row.timestampOut)}
+            ${dialogInfo("พขร.", row.driverFullName)}
+            ${dialogInfo("จำนวน", row.qtyOut)}
+            ${dialogInfo("ECD", row.ecdName)}
+            ${dialogInfo("TCR", row.tcrNo)}
+            ${dialogInfo("ผู้บันทึก", row.recordedBy)}
+          </div>
+
+          ${updatedText}
+
+          <div class="outboundHistoryActions">
+            <button
+              type="button"
+              class="secondaryBtn editOutboundRowBtn"
+              data-action="edit"
+              data-outbound-id="${escapeAttr(row.outboundId || "")}"
+            >
+              แก้ไข
+            </button>
+
+            <button
+              type="button"
+              class="secondaryBtn dangerSoftBtn deleteOutboundRowBtn"
+              data-action="delete"
+              data-outbound-id="${escapeAttr(row.outboundId || "")}"
+            >
+              ลบรายการนี้
+            </button>
+          </div>
+        </article>
+      `;
+    }).join("");
+
+    return `
+      <div class="outboundHistoryWrap">
+        <div class="outboundHistoryToolbar">
+          <button id="searchOutboundAgainBtn" type="button" class="secondaryBtn">
+            เลือกวันที่ใหม่
+          </button>
+
+          <span>พบ ${rows.length} รายการ</span>
+        </div>
+
+        <div id="outboundHistoryList" class="outboundHistoryList">
+          ${cards}
+        </div>
+      </div>
+    `;
+  }
+
+  function initOutboundHistoryEvents(rows, datePayload) {
+    const list = $("outboundHistoryList");
+    const searchAgainBtn = $("searchOutboundAgainBtn");
+    const normalizedPayload = normalizeDatePayload(datePayload);
+
+    if (searchAgainBtn) {
+      searchAgainBtn.addEventListener("click", async () => {
+        await handleEditOutboundSearch();
+      });
+    }
+
+    if (!list) return;
+
+    const rowMap = {};
+
+    rows.forEach((row) => {
+      rowMap[String(row.outboundId || "").trim()] = row;
     });
-  }
 
-  if (tcr) {
-    tcr.addEventListener("input", () => {
-      tcr.value = tcr.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-    });
-  }
-}
+    list.addEventListener("click", async (ev) => {
+      const btn = ev.target.closest("button[data-action]");
+      if (!btn) return;
 
+      const action = String(btn.dataset.action || "");
+      const outboundId = String(btn.dataset.outboundId || "").trim();
+      const row = rowMap[outboundId];
 
-function collectEditOutboundPayload(row) {
-  const brandInput = $("editBrandOutInput");
-  const qtyInput = $("editQtyOutInput");
-  const ecdInput = $("editEcdInput");
-  const tcrInput = $("editTcrInput");
-  const noteInput = $("editNoteInput");
+      if (!row) {
+        await Swal.fire({
+          icon: "error",
+          title: "ไม่พบข้อมูลรายการ",
+          text: "ไม่พบ Outbound ID ที่เลือก",
+          confirmButtonText: "ตกลง"
+        });
+        return;
+      }
 
-  const brandOut = String(brandInput ? brandInput.value || "" : "")
-    .trim()
-    .toUpperCase();
+      if (action === "edit") {
+        await openEditOutboundDialog(row, normalizedPayload);
+        return;
+      }
 
-  const qtyOut = Number(qtyInput ? qtyInput.value || 0 : 0);
-
-  const ecdName = String(ecdInput ? ecdInput.value || "" : "")
-    .trim()
-    .toUpperCase();
-
-  const tcrNo = String(tcrInput ? tcrInput.value || "" : "")
-    .trim()
-    .toUpperCase();
-
-  const note = String(noteInput ? noteInput.value || "" : "").trim();
-
-  if (!brandOut) {
-    Swal.showValidationMessage("กรุณาเลือกยี่ห้อพาเลทขาออก");
-    return false;
-  }
-
-  if (!Number.isFinite(qtyOut) || qtyOut <= 0) {
-    Swal.showValidationMessage("กรุณาระบุจำนวนพาเลทขาออกเป็นตัวเลขมากกว่า 0");
-    return false;
-  }
-
-  if (!ecdName || !ECD_REGEX.test(ecdName)) {
-    Swal.showValidationMessage("ECD ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
-    return false;
-  }
-
-  if (!tcrNo || !TCR_REGEX.test(tcrNo)) {
-    Swal.showValidationMessage("TCR ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
-    return false;
-  }
-
-  return {
-    outboundId: row.outboundId,
-    brandOut,
-    qtyOut: Math.floor(qtyOut),
-    ecdName,
-    tcrNo,
-    note,
-    updatedBy: state.currentUser,
-    recordedBy: state.currentUser
-  };
-}
-
-
-async function submitUpdateOutbound(payload, dateText) {
-  try {
-    Swal.fire({
-      title: "กำลังบันทึกการแก้ไข",
-      html: "กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูลและสร้างประวัติการแก้ไข",
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      didOpen: () => {
-        Swal.showLoading();
+      if (action === "delete") {
+        await confirmDeleteOutbound(row, normalizedPayload);
       }
     });
+  }
 
-    const res = await apiPost("/api/update-outbound", payload, 60000);
+  async function openEditOutboundDialog(row, datePayload) {
+    const brandOptions = buildBrandSelectOptions(row.brandOut);
 
-    if (!res.ok) {
-      throw new Error(res.message || "แก้ไขรายการไม่สำเร็จ");
-    }
-
-    await Swal.fire({
-      icon: "success",
-      title: "แก้ไขสำเร็จ",
+    const result = await Swal.fire({
+      title: "แก้ไขรายการขาออก",
       html: `
-        <div class="successSummary">
-          <div><span>Outbound ID</span><strong>${escapeHtml(res.outboundId || payload.outboundId || "-")}</strong></div>
-          <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || "-")}</strong></div>
-          <div><span>ผู้แก้ไข</span><strong>${escapeHtml(res.updatedBy || state.currentUser || "-")}</strong></div>
-          <div><span>เวลาแก้ไข</span><strong>${escapeHtml(res.updatedAt || "-")}</strong></div>
+        <div class="editOutboundDialog">
+          <section class="dialogSection">
+            <h3>ข้อมูลอ้างอิง</h3>
+
+            <div class="dialogInfoGrid">
+              ${dialogInfo("Outbound ID", row.outboundId)}
+              ${dialogInfo("Auto ID", row.autoId)}
+              ${dialogInfo("ทะเบียนรถ", row.plateNo)}
+              ${dialogInfo("พขร.", row.driverFullName)}
+              ${dialogInfo("เวลาออก", row.timestampOut)}
+              ${dialogInfo("Duration", row.duration)}
+            </div>
+
+            <div class="confirmNote">
+              ข้อมูลเวลาออก, Duration, Auto ID, ทะเบียนรถ และข้อมูล พขร. จะไม่ถูกแก้ไข
+            </div>
+          </section>
+
+          <section class="dialogSection">
+            <h3>ข้อมูลที่แก้ไขได้</h3>
+
+            <div class="docPairGrid">
+              <div class="fieldGroup">
+                <label for="editBrandOutInput">ยี่ห้อพาเลทขาออก <em>*</em></label>
+                <select id="editBrandOutInput" class="dialogInput">
+                  ${brandOptions}
+                </select>
+              </div>
+
+              <div class="fieldGroup">
+                <label for="editQtyOutInput">จำนวนพาเลทขาออก <em>*</em></label>
+                <input
+                  id="editQtyOutInput"
+                  class="dialogInput"
+                  type="number"
+                  inputmode="numeric"
+                  min="1"
+                  step="1"
+                  value="${escapeAttr(row.qtyOut || "")}"
+                >
+              </div>
+            </div>
+
+            <div class="docPairGrid">
+              <div class="fieldGroup">
+                <label for="editEcdInput">หมายเลขเอกสาร ECD <em>*</em></label>
+                <input
+                  id="editEcdInput"
+                  class="dialogInput"
+                  type="text"
+                  inputmode="latin"
+                  maxlength="30"
+                  value="${escapeAttr(row.ecdName || "")}"
+                >
+              </div>
+
+              <div class="fieldGroup">
+                <label for="editTcrInput">หมายเลขเอกสาร TCR <em>*</em></label>
+                <input
+                  id="editTcrInput"
+                  class="dialogInput"
+                  type="text"
+                  inputmode="latin"
+                  maxlength="30"
+                  value="${escapeAttr(row.tcrNo || "")}"
+                >
+              </div>
+            </div>
+
+            <div class="fieldGroup">
+              <label for="editNoteInput">หมายเหตุ</label>
+              <textarea
+                id="editNoteInput"
+                class="dialogTextarea"
+                rows="3"
+              >${escapeHtml(row.note || "")}</textarea>
+            </div>
+
+            <div class="helpText">
+              รอบนี้แก้ไขเฉพาะข้อมูลตัวอักษร/จำนวนก่อน ส่วนรูปหลักฐานยังคงของเดิม
+            </div>
+          </section>
         </div>
       `,
-      confirmButtonText: "กลับไปดูรายการ"
-    });
-
-    await openOutboundHistoryDialog(dateText);
-
-  } catch (err) {
-    await showError(err);
-  }
-}
-
-
-async function confirmDeleteOutbound(row, dateText) {
-  const confirm = await Swal.fire({
-    icon: "warning",
-    title: "ลบรายการขาออกนี้?",
-    html: `
-      <div class="confirmBox">
-        <div><span>Outbound ID</span><strong>${escapeHtml(row.outboundId || "-")}</strong></div>
-        <div><span>ทะเบียนรถ</span><strong>${escapeHtml(row.plateNo || "-")}</strong></div>
-        <div><span>พขร.</span><strong>${escapeHtml(row.driverFullName || "-")}</strong></div>
-        <div><span>เวลาออก</span><strong>${escapeHtml(row.timestampOut || "-")}</strong></div>
-      </div>
-
-      <div class="confirmNote">
-        ระบบจะลบแบบ Soft Delete เท่านั้น ข้อมูลจะยังอยู่ใน Sheet1 พร้อมประวัติ AuditLog และจะไม่แก้ไข Sheet5
-      </div>
-    `,
-    input: "textarea",
-    inputLabel: "เหตุผลการลบ",
-    inputPlaceholder: "เช่น บันทึกผิดรายการ / จำนวนผิดมาก / ยกเลิกเอกสาร",
-    inputAttributes: {
-      maxlength: 250
-    },
-    showCancelButton: true,
-    confirmButtonText: "ยืนยันลบ",
-    cancelButtonText: "ยกเลิก",
-    reverseButtons: true,
-    inputValidator: (value) => {
-      if (!String(value || "").trim()) {
-        return "กรุณาระบุเหตุผลการลบ";
-      }
-
-      return null;
-    }
-  });
-
-  if (!confirm.isConfirmed) return;
-
-  const reason = String(confirm.value || "").trim();
-
-  try {
-    Swal.fire({
-      title: "กำลังลบรายการ",
-      html: "กรุณารอสักครู่ ระบบกำลังบันทึกสถานะลบและ AuditLog",
-      allowOutsideClick: false,
-      allowEscapeKey: false,
+      width: 820,
+      showCancelButton: true,
+      confirmButtonText: "บันทึกการแก้ไข",
+      cancelButtonText: "ยกเลิก",
+      reverseButtons: true,
+      focusConfirm: false,
       didOpen: () => {
-        Swal.showLoading();
+        initEditOutboundInputFilters();
+      },
+      preConfirm: () => {
+        return collectEditOutboundPayload(row);
       }
     });
 
-    const res = await apiPost("/api/delete-outbound", {
+    if (!result.isConfirmed || !result.value) return;
+
+    await submitUpdateOutbound(result.value, datePayload);
+  }
+
+  function initEditOutboundInputFilters() {
+    const ecd = $("editEcdInput");
+    const tcr = $("editTcrInput");
+
+    if (ecd) {
+      ecd.addEventListener("input", () => {
+        ecd.value = ecd.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+      });
+    }
+
+    if (tcr) {
+      tcr.addEventListener("input", () => {
+        tcr.value = tcr.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+      });
+    }
+  }
+
+  function collectEditOutboundPayload(row) {
+    const brandInput = $("editBrandOutInput");
+    const qtyInput = $("editQtyOutInput");
+    const ecdInput = $("editEcdInput");
+    const tcrInput = $("editTcrInput");
+    const noteInput = $("editNoteInput");
+
+    const brandOut = String(brandInput ? brandInput.value || "" : "")
+      .trim()
+      .toUpperCase();
+
+    const qtyOut = Number(qtyInput ? qtyInput.value || 0 : 0);
+
+    const ecdName = String(ecdInput ? ecdInput.value || "" : "")
+      .trim()
+      .toUpperCase();
+
+    const tcrNo = String(tcrInput ? tcrInput.value || "" : "")
+      .trim()
+      .toUpperCase();
+
+    const note = String(noteInput ? noteInput.value || "" : "").trim();
+
+    if (!brandOut) {
+      Swal.showValidationMessage("กรุณาเลือกยี่ห้อพาเลทขาออก");
+      return false;
+    }
+
+    if (!Number.isFinite(qtyOut) || qtyOut <= 0) {
+      Swal.showValidationMessage("กรุณาระบุจำนวนพาเลทขาออกเป็นตัวเลขมากกว่า 0");
+      return false;
+    }
+
+    if (!ecdName || !ECD_REGEX.test(ecdName)) {
+      Swal.showValidationMessage("ECD ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
+      return false;
+    }
+
+    if (!tcrNo || !TCR_REGEX.test(tcrNo)) {
+      Swal.showValidationMessage("TCR ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น");
+      return false;
+    }
+
+    return {
       outboundId: row.outboundId,
-      deletedBy: state.currentUser,
-      recordedBy: state.currentUser,
-      reason
-    }, 60000);
+      brandOut,
+      qtyOut: Math.floor(qtyOut),
+      ecdName,
+      tcrNo,
+      note,
+      updatedBy: state.currentUser,
+      recordedBy: state.currentUser
+    };
+  }
 
-    if (!res.ok) {
-      throw new Error(res.message || "ลบรายการไม่สำเร็จ");
+  async function submitUpdateOutbound(payload, datePayload) {
+    try {
+      Swal.fire({
+        title: "กำลังบันทึกการแก้ไข",
+        html: "กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูลและสร้างประวัติการแก้ไข",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const res = await apiPost("/api/update-outbound", payload, 60000);
+
+      if (!res.ok) {
+        throw new Error(res.message || "แก้ไขรายการไม่สำเร็จ");
+      }
+
+      await Swal.fire({
+        icon: "success",
+        title: "แก้ไขสำเร็จ",
+        html: `
+          <div class="successSummary">
+            <div><span>Outbound ID</span><strong>${escapeHtml(res.outboundId || payload.outboundId || "-")}</strong></div>
+            <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || "-")}</strong></div>
+            <div><span>ผู้แก้ไข</span><strong>${escapeHtml(res.updatedBy || state.currentUser || "-")}</strong></div>
+            <div><span>เวลาแก้ไข</span><strong>${escapeHtml(res.updatedAt || "-")}</strong></div>
+          </div>
+        `,
+        confirmButtonText: "กลับไปดูรายการ"
+      });
+
+      await openOutboundHistoryDialog(datePayload);
+
+    } catch (err) {
+      await showError(err);
     }
+  }
 
-    await Swal.fire({
-      icon: "success",
-      title: "ลบรายการสำเร็จ",
+  async function confirmDeleteOutbound(row, datePayload) {
+    const confirm = await Swal.fire({
+      icon: "warning",
+      title: "ลบรายการขาออกนี้?",
       html: `
-        <div class="successSummary">
-          <div><span>Outbound ID</span><strong>${escapeHtml(res.outboundId || row.outboundId || "-")}</strong></div>
-          <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || row.plateNo || "-")}</strong></div>
-          <div><span>ผู้ลบ</span><strong>${escapeHtml(res.deletedBy || state.currentUser || "-")}</strong></div>
-          <div><span>เวลาลบ</span><strong>${escapeHtml(res.deletedAt || "-")}</strong></div>
+        <div class="confirmBox">
+          <div><span>Outbound ID</span><strong>${escapeHtml(row.outboundId || "-")}</strong></div>
+          <div><span>ทะเบียนรถ</span><strong>${escapeHtml(row.plateNo || "-")}</strong></div>
+          <div><span>พขร.</span><strong>${escapeHtml(row.driverFullName || "-")}</strong></div>
+          <div><span>เวลาออก</span><strong>${escapeHtml(row.timestampOut || "-")}</strong></div>
+        </div>
+
+        <div class="confirmNote">
+          ระบบจะลบแบบ Soft Delete เท่านั้น ข้อมูลจะยังอยู่ใน Sheet1 พร้อมประวัติ AuditLog และจะไม่แก้ไข Sheet5
         </div>
       `,
-      confirmButtonText: "กลับไปดูรายการ"
+      input: "textarea",
+      inputLabel: "เหตุผลการลบ",
+      inputPlaceholder: "เช่น บันทึกผิดรายการ / จำนวนผิดมาก / ยกเลิกเอกสาร",
+      inputAttributes: {
+        maxlength: 250
+      },
+      showCancelButton: true,
+      confirmButtonText: "ยืนยันลบ",
+      cancelButtonText: "ยกเลิก",
+      reverseButtons: true,
+      inputValidator: (value) => {
+        if (!String(value || "").trim()) {
+          return "กรุณาระบุเหตุผลการลบ";
+        }
+
+        return null;
+      }
     });
 
-    await openOutboundHistoryDialog(dateText);
+    if (!confirm.isConfirmed) return;
 
-  } catch (err) {
-    await showError(err);
+    const reason = String(confirm.value || "").trim();
+
+    try {
+      Swal.fire({
+        title: "กำลังลบรายการ",
+        html: "กรุณารอสักครู่ ระบบกำลังบันทึกสถานะลบและ AuditLog",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const res = await apiPost("/api/delete-outbound", {
+        outboundId: row.outboundId,
+        deletedBy: state.currentUser,
+        recordedBy: state.currentUser,
+        reason
+      }, 60000);
+
+      if (!res.ok) {
+        throw new Error(res.message || "ลบรายการไม่สำเร็จ");
+      }
+
+      await Swal.fire({
+        icon: "success",
+        title: "ลบรายการสำเร็จ",
+        html: `
+          <div class="successSummary">
+            <div><span>Outbound ID</span><strong>${escapeHtml(res.outboundId || row.outboundId || "-")}</strong></div>
+            <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || row.plateNo || "-")}</strong></div>
+            <div><span>ผู้ลบ</span><strong>${escapeHtml(res.deletedBy || state.currentUser || "-")}</strong></div>
+            <div><span>เวลาลบ</span><strong>${escapeHtml(res.deletedAt || "-")}</strong></div>
+          </div>
+        `,
+        confirmButtonText: "กลับไปดูรายการ"
+      });
+
+      await openOutboundHistoryDialog(datePayload);
+
+    } catch (err) {
+      await showError(err);
+    }
   }
-}
 
+  function buildBrandSelectOptions(currentBrand) {
+    const current = String(currentBrand || "").trim().toUpperCase();
 
-function buildBrandSelectOptions(currentBrand) {
-  const current = String(currentBrand || "").trim().toUpperCase();
+    let brands = (state.options.brands || [])
+      .map((b) => String(b.brand || "").trim().toUpperCase())
+      .filter(Boolean);
 
-  let brands = (state.options.brands || [])
-    .map((b) => String(b.brand || "").trim().toUpperCase())
-    .filter(Boolean);
+    brands = Array.from(new Set(brands.concat(["LOSCAM", "CHEP"])));
 
-  brands = Array.from(new Set(brands.concat(["LOSCAM", "CHEP"])));
+    return brands.map((brand) => {
+      const selected = brand === current ? "selected" : "";
+      return `<option value="${escapeAttr(brand)}" ${selected}>${escapeHtml(brand)}</option>`;
+    }).join("");
+  }
 
-  return brands.map((brand) => {
-    const selected = brand === current ? "selected" : "";
-    return `<option value="${escapeAttr(brand)}" ${selected}>${escapeHtml(brand)}</option>`;
-  }).join("");
-}
-
-
-function isoDateToDisplayDate(isoDate) {
-  const text = String(isoDate || "").trim();
-  const m = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-
-  if (!m) return "";
-
-  return `${m[3]}/${m[2]}/${m[1]}`;
-}
-
-
-function toDateInputValue(date) {
-  const d = date instanceof Date && !isNaN(date.getTime())
-    ? date
-    : new Date();
-
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-
-  return `${yyyy}-${mm}-${dd}`;
-}
   function removeInboundRowFromState(autoId) {
     const target = String(autoId || "").trim();
 
@@ -2204,6 +2192,138 @@ function toDateInputValue(date) {
       .finally(() => {
         clearTimeout(timer);
       });
+  }
+
+  /* =========================
+   * DATE HELPERS
+   * ========================= */
+
+  function getDateInputIsoValue(inputId) {
+    const input = $(inputId);
+    if (!input) return "";
+
+    const raw = String(input.value || "").trim();
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return raw;
+    }
+
+    let m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+    if (m) {
+      const dd = String(Number(m[1])).padStart(2, "0");
+      const mm = String(Number(m[2])).padStart(2, "0");
+      const yyyy = String(Number(m[3]));
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    m = raw.match(/^(\d{1,2})[-\s]([A-Za-z]{3,})[-\s](\d{4})$/);
+
+    if (m) {
+      const monthMap = {
+        jan: "01",
+        january: "01",
+        feb: "02",
+        february: "02",
+        mar: "03",
+        march: "03",
+        apr: "04",
+        april: "04",
+        may: "05",
+        jun: "06",
+        june: "06",
+        jul: "07",
+        july: "07",
+        aug: "08",
+        august: "08",
+        sep: "09",
+        sept: "09",
+        september: "09",
+        oct: "10",
+        october: "10",
+        nov: "11",
+        november: "11",
+        dec: "12",
+        december: "12"
+      };
+
+      const dd = String(Number(m[1])).padStart(2, "0");
+      const mm = monthMap[String(m[2]).toLowerCase()];
+      const yyyy = String(Number(m[3]));
+
+      if (mm) return `${yyyy}-${mm}-${dd}`;
+    }
+
+    const d = new Date(raw);
+
+    if (!isNaN(d.getTime())) {
+      return toDateInputValue(d);
+    }
+
+    return "";
+  }
+
+  function isoDateToDisplayDate(isoDate) {
+    const text = String(isoDate || "").trim();
+    const m = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (!m) return "";
+
+    return `${m[3]}/${m[2]}/${m[1]}`;
+  }
+
+  function displayDateToIsoDate(displayDate) {
+    const text = String(displayDate || "").trim();
+
+    const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+    if (!m) return text;
+
+    const dd = String(Number(m[1])).padStart(2, "0");
+    const mm = String(Number(m[2])).padStart(2, "0");
+    const yyyy = String(Number(m[3]));
+
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  function toDateInputValue(date) {
+    const d = date instanceof Date && !isNaN(date.getTime())
+      ? date
+      : new Date();
+
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  function normalizeDatePayload(datePayload) {
+    if (typeof datePayload === "string") {
+      const text = String(datePayload || "").trim();
+
+      if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+        return {
+          apiDate: text,
+          displayDate: isoDateToDisplayDate(text)
+        };
+      }
+
+      const iso = displayDateToIsoDate(text);
+
+      return {
+        apiDate: iso,
+        displayDate: /^\d{4}-\d{2}-\d{2}$/.test(iso) ? isoDateToDisplayDate(iso) : text
+      };
+    }
+
+    const apiDate = String(datePayload && datePayload.apiDate ? datePayload.apiDate : "").trim();
+    const displayDate = String(datePayload && datePayload.displayDate ? datePayload.displayDate : "").trim();
+
+    return {
+      apiDate,
+      displayDate: displayDate || isoDateToDisplayDate(apiDate) || apiDate
+    };
   }
 
   /* =========================
