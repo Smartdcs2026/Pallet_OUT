@@ -2317,7 +2317,7 @@ function updateEditEvidencePreview() {
   /* =========================
    * SUBMIT
    * ========================= */
-  function buildSubmitSuccessHtml(res, payload) {
+ function buildSubmitSuccessHtml(res, payload) {
   const outboundId = res.outboundId || "-";
   const autoId = res.autoId || "-";
   const plateNo = res.plateNo || payload.plateNo || "-";
@@ -2327,6 +2327,13 @@ function updateEditEvidencePreview() {
   const timestampOut = res.timestampOut || "-";
   const duration = res.duration || "-";
 
+  const brandOut = String(res.brandOut || payload.brandOut || "")
+    .trim()
+    .toUpperCase();
+
+  const brandImageUrl = getBrandImageUrlByName(brandOut);
+  const brandClass = brandOut === "CHEP" ? "brandChep" : "brandLoscam";
+
   return `
     <div class="submitSuccessCard">
       <div class="submitSuccessHero">
@@ -2334,7 +2341,20 @@ function updateEditEvidencePreview() {
 
         <div class="submitSuccessMain">
           <div class="submitSuccessLabel">บันทึกพาเลทขาออกเรียบร้อย</div>
-          <div class="submitSuccessPlate">${escapeHtml(plateNo)}</div>
+
+          <div class="submitSuccessTitleLine">
+            <div class="submitSuccessPlate">${escapeHtml(plateNo)}</div>
+
+            <div class="submitSuccessBrand ${brandClass}">
+              ${
+                brandImageUrl
+                  ? `<img src="${escapeAttr(brandImageUrl)}" alt="${escapeAttr(brandOut)}" loading="lazy">`
+                  : ""
+              }
+              <span>${escapeHtml(brandOut || "-")}</span>
+            </div>
+          </div>
+
           <div class="submitSuccessDriver">${escapeHtml(driverFullName)}</div>
         </div>
       </div>
@@ -2348,6 +2368,16 @@ function updateEditEvidencePreview() {
         <div class="submitSuccessItem wide">
           <span>Auto ID</span>
           <strong>${escapeHtml(autoId)}</strong>
+        </div>
+
+        <div class="submitSuccessItem">
+          <span>ยี่ห้อพาเลท</span>
+          <strong>${escapeHtml(brandOut || "-")}</strong>
+        </div>
+
+        <div class="submitSuccessItem">
+          <span>จำนวน</span>
+          <strong>${escapeHtml(payload.qtyOut || res.qtyOut || "-")}</strong>
         </div>
 
         <div class="submitSuccessItem">
@@ -2373,7 +2403,6 @@ function updateEditEvidencePreview() {
     </div>
   `;
 }
-
   async function submitOutRecord(payload) {
     try {
       state.isSubmitting = true;
@@ -2417,7 +2446,21 @@ function updateEditEvidencePreview() {
       state.isSubmitting = false;
     }
   }
+function getBrandImageUrlByName(brandName) {
+  const target = String(brandName || "").trim().toUpperCase();
 
+  if (!target) return "";
+
+  const brands = Array.isArray(state.options.brands)
+    ? state.options.brands
+    : [];
+
+  const found = brands.find((item) => {
+    return String(item.brand || "").trim().toUpperCase() === target;
+  });
+
+  return found && found.imageUrl ? String(found.imageUrl) : "";
+}
   /* =========================
    * API
    * ========================= */
