@@ -2163,3 +2163,251 @@ img {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+/* =====================================================
+   SUBMIT SUCCESS SWEETALERT
+   ออกแบบกล่องบันทึกสำเร็จให้กะทัดรัดและรองรับมือถือ
+===================================================== */
+
+.swal2-popup.palletSuccessPopup {
+  width: min(620px, calc(100vw - 18px)) !important;
+  padding: 16px 16px 14px !important;
+  border-radius: 22px !important;
+}
+
+.palletSuccessTitle {
+  margin: 4px 0 0 !important;
+  padding: 0 !important;
+  font-size: 1.05rem !important;
+  font-weight: 900 !important;
+  line-height: 1.2 !important;
+}
+
+.palletSuccessHtml {
+  margin: 10px 0 0 !important;
+  padding: 0 !important;
+  max-height: calc(100dvh - 150px) !important;
+  overflow-y: auto !important;
+}
+
+.submitSuccessCard {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.submitSuccessHero {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 11px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(220, 252, 231, 0.98), rgba(240, 253, 250, 0.98));
+  border: 1px solid #bbf7d0;
+}
+
+.submitSuccessCheck {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--success);
+  border: 2px solid #bbf7d0;
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.submitSuccessMain {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.submitSuccessLabel {
+  color: var(--success-dark);
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.submitSuccessPlate {
+  color: var(--text);
+  font-size: 1.22rem;
+  font-weight: 950;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.submitSuccessDriver {
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 850;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.submitSuccessGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.submitSuccessItem {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px;
+  border-radius: 13px;
+  background: #f8fafc;
+  border: 1px solid #dbe3ea;
+}
+
+.submitSuccessItem.wide {
+  grid-column: span 2;
+}
+
+.submitSuccessItem span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.submitSuccessItem strong {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 950;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.palletSuccessConfirm {
+  min-width: 86px !important;
+  min-height: 38px !important;
+  padding: 8px 18px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--primary) !important;
+  color: #ffffff !important;
+  font-family: var(--font-main) !important;
+  font-size: 0.9rem !important;
+  font-weight: 900 !important;
+  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.22) !important;
+}
+
+.palletSuccessConfirm:hover {
+  background: var(--primary-dark) !important;
+}
+
+
+/* มือถือ */
+@media (max-width: 640px) {
+  .swal2-popup.palletSuccessPopup {
+    width: calc(100vw - 12px) !important;
+    padding: 12px 10px 10px !important;
+    border-radius: 18px !important;
+  }
+
+  .palletSuccessTitle {
+    font-size: 0.98rem !important;
+  }
+
+  .palletSuccessHtml {
+    margin-top: 8px !important;
+    max-height: calc(100dvh - 132px) !important;
+  }
+
+  .submitSuccessCard {
+    gap: 8px;
+  }
+
+  .submitSuccessHero {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 8px;
+    padding: 9px;
+    border-radius: 15px;
+  }
+
+  .submitSuccessCheck {
+    width: 42px;
+    height: 42px;
+    font-size: 1.55rem;
+  }
+
+  .submitSuccessLabel {
+    font-size: 0.72rem;
+  }
+
+  .submitSuccessPlate {
+    font-size: 1.02rem;
+  }
+
+  .submitSuccessDriver {
+    font-size: 0.78rem;
+  }
+
+  .submitSuccessGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .submitSuccessItem {
+    padding: 7px 8px;
+    border-radius: 11px;
+  }
+
+  .submitSuccessItem span {
+    font-size: 0.64rem;
+  }
+
+  .submitSuccessItem strong {
+    font-size: 0.78rem;
+  }
+
+  .palletSuccessConfirm {
+    min-height: 36px !important;
+    padding: 7px 18px !important;
+    font-size: 0.84rem !important;
+  }
+}
+
+
+/* มือถือจอเล็กมาก */
+@media (max-width: 390px) {
+  .submitSuccessHero {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .submitSuccessCheck {
+    width: 38px;
+    height: 38px;
+    font-size: 1.35rem;
+  }
+
+  .submitSuccessPlate {
+    font-size: 0.94rem;
+  }
+
+  .submitSuccessDriver {
+    font-size: 0.74rem;
+  }
+
+  .submitSuccessItem {
+    padding: 6px 7px;
+  }
+
+  .submitSuccessItem span {
+    font-size: 0.6rem;
+  }
+
+  .submitSuccessItem strong {
+    font-size: 0.72rem;
+  }
+}
