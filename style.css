@@ -2411,3 +2411,101 @@ img {
     font-size: 0.72rem;
   }
 }
+/* =====================================================
+   SUBMIT SUCCESS BRAND
+   เพิ่มยี่ห้อ/ภาพพาเลทใน SweetAlert บันทึกสำเร็จ
+===================================================== */
+
+.submitSuccessTitleLine {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.submitSuccessBrand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 82px;
+  max-width: 122px;
+  height: 34px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.submitSuccessBrand.brandLoscam {
+  background: var(--loscam);
+}
+
+.submitSuccessBrand.brandChep {
+  background: var(--chep);
+}
+
+.submitSuccessBrand img {
+  width: 34px;
+  height: 22px;
+  object-fit: contain;
+  object-position: center;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 1px;
+}
+
+.submitSuccessBrand span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* มือถือ */
+@media (max-width: 640px) {
+  .submitSuccessTitleLine {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+
+  .submitSuccessBrand {
+    min-width: 70px;
+    max-width: 104px;
+    height: 30px;
+    padding: 3px 6px;
+    font-size: 0.62rem;
+  }
+
+  .submitSuccessBrand img {
+    width: 28px;
+    height: 18px;
+  }
+}
+
+
+/* มือถือจอเล็กมาก */
+@media (max-width: 390px) {
+  .submitSuccessTitleLine {
+    align-items: start;
+  }
+
+  .submitSuccessBrand {
+    min-width: 62px;
+    max-width: 92px;
+    height: 28px;
+    padding: 3px 5px;
+    font-size: 0.58rem;
+  }
+
+  .submitSuccessBrand img {
+    width: 24px;
+    height: 16px;
+  }
+}
