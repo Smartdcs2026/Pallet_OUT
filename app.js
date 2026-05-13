@@ -31,6 +31,9 @@
   const ECD_REGEX = /^[A-Za-z0-9]+$/;
   const TCR_REGEX = /^[A-Za-z0-9]+$/;
   const DEFAULT_PALLET_QTY = [10, 20, 30, 40, 50, 60, 80, 100];
+  const INBOUND_LOAD_TIMEOUT_MS = 120000;
+const INBOUND_LOAD_RETRY_COUNT = 2;
+const INBOUND_LOAD_RETRY_DELAY_MS = 900;
 
   const state = {
     currentUser: "",
@@ -366,19 +369,38 @@ editEvidence: {
   }
 
   async function loadInboundRows(showLoading = true) {
-    try {
-      if (showLoading) {
-        setStatus(true, "กำลังโหลดรายการรอบันทึกขาออก...");
-      }
+  try {
+    if (showLoading) {
+      setStatus(true, "กำลังโหลดรายการรอบันทึกขาออก...");
+    }
 
-      const res = await apiGet("/api/inbound-open");
+    const res = await apiGetWithRetry(
+      "/api/inbound-open?_t=" + Date.now(),
+      INBOUND_LOAD_RETRY_COUNT,
+      INBOUND_LOAD_TIMEOUT_MS
+    );
 
-      if (!res.ok) {
-        throw new Error(res.message || "โหลดรายการขาเข้าไม่สำเร็จ");
-      }
+    if (!res.ok) {
+      throw new Error(res.message || "โหลดรายการขาเข้าไม่สำเร็จ");
+    }
 
-      state.inboundRows = sortRowsByLatestTimestamp(Array.isArray(res.rows) ? res.rows : []);
-      state.filteredRows = state.inboundRows.slice();
+    state.inboundRows = sortRowsByLatestTimestamp(
+      Array.isArray(res.rows) ? res.rows : []
+    );
+
+    state.filteredRows = state.inboundRows.slice();
+
+    if (els.searchInput) {
+      const q = String(els.searchInput.value || "").trim();
+      if (q) applySearch(q);
+    }
+
+    renderInboundRows(state.filteredRows);
+    updateSummary();
+
+  } catch (err) {
+    if (state.inboundRows.length) {
+      state.filteredRows = sortRowsByLatestTimestamp(state.inboundRows.slice());
 
       if (els.searchInput) {
         const q = String(els.searchInput.value || "").trim();
@@ -388,15 +410,29 @@ editEvidence: {
       renderInboundRows(state.filteredRows);
       updateSummary();
 
-    } catch (err) {
-      await showError(err);
-    } finally {
-      if (showLoading) {
-        setStatus(false);
-      }
+      await Swal.fire({
+        icon: "warning",
+        title: "โหลดข้อมูลใหม่ไม่สำเร็จ",
+        html: `
+          <div style="text-align:left;line-height:1.55">
+            ระบบยังแสดงข้อมูลล่าสุดที่โหลดสำเร็จก่อนหน้าไว้ให้ใช้งานชั่วคราว<br>
+            <strong>สาเหตุ:</strong> ${escapeHtml(err.message || String(err))}
+          </div>
+        `,
+        confirmButtonText: "ตกลง"
+      });
+
+      return;
+    }
+
+    await showError(err);
+
+  } finally {
+    if (showLoading) {
+      setStatus(false);
     }
   }
-
+}
   /* =========================
    * SEARCH / SORT
    * ========================= */
@@ -2464,6 +2500,31 @@ function getBrandImageUrlByName(brandName) {
   /* =========================
    * API
    * ========================= */
+  async function apiGetWithRetry(path, retryCount, timeoutMs) {
+  let lastError = null;
+  const attempts = Math.max(1, Number(retryCount || 1));
+
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await apiGet(path, timeoutMs);
+    } catch (err) {
+      lastError = err;
+
+      if (i < attempts - 1) {
+        await delay(INBOUND_LOAD_RETRY_DELAY_MS);
+      }
+    }
+  }
+
+  throw lastError || new Error("โหลดข้อมูลไม่สำเร็จ");
+}
+
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, Math.max(0, Number(ms || 0)));
+  });
+}
 
   async function apiGet(path, timeoutMs = 60000) {
     const url = buildApiUrl(path);
