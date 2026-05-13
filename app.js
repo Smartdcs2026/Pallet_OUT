@@ -2317,6 +2317,62 @@ function updateEditEvidencePreview() {
   /* =========================
    * SUBMIT
    * ========================= */
+  function buildSubmitSuccessHtml(res, payload) {
+  const outboundId = res.outboundId || "-";
+  const autoId = res.autoId || "-";
+  const plateNo = res.plateNo || payload.plateNo || "-";
+  const driverFullName = res.driverFullName || payload.driverFullName || "-";
+  const ecdName = res.ecdName || payload.ecdName || "-";
+  const tcrNo = res.tcrNo || payload.tcrNo || "-";
+  const timestampOut = res.timestampOut || "-";
+  const duration = res.duration || "-";
+
+  return `
+    <div class="submitSuccessCard">
+      <div class="submitSuccessHero">
+        <div class="submitSuccessCheck">✓</div>
+
+        <div class="submitSuccessMain">
+          <div class="submitSuccessLabel">บันทึกพาเลทขาออกเรียบร้อย</div>
+          <div class="submitSuccessPlate">${escapeHtml(plateNo)}</div>
+          <div class="submitSuccessDriver">${escapeHtml(driverFullName)}</div>
+        </div>
+      </div>
+
+      <div class="submitSuccessGrid">
+        <div class="submitSuccessItem wide">
+          <span>Outbound ID</span>
+          <strong>${escapeHtml(outboundId)}</strong>
+        </div>
+
+        <div class="submitSuccessItem wide">
+          <span>Auto ID</span>
+          <strong>${escapeHtml(autoId)}</strong>
+        </div>
+
+        <div class="submitSuccessItem">
+          <span>ECD</span>
+          <strong>${escapeHtml(ecdName)}</strong>
+        </div>
+
+        <div class="submitSuccessItem">
+          <span>TCR</span>
+          <strong>${escapeHtml(tcrNo)}</strong>
+        </div>
+
+        <div class="submitSuccessItem wide">
+          <span>เวลาออก</span>
+          <strong>${escapeHtml(timestampOut)}</strong>
+        </div>
+
+        <div class="submitSuccessItem wide">
+          <span>Duration</span>
+          <strong>${escapeHtml(duration)}</strong>
+        </div>
+      </div>
+    </div>
+  `;
+}
 
   async function submitOutRecord(payload) {
     try {
@@ -2339,22 +2395,19 @@ function updateEditEvidencePreview() {
       }
 
       await Swal.fire({
-        icon: "success",
-        title: "บันทึกสำเร็จ",
-        html: `
-          <div class="successSummary">
-            <div><span>Outbound ID</span><strong>${escapeHtml(res.outboundId || "-")}</strong></div>
-            <div><span>Auto ID</span><strong>${escapeHtml(res.autoId || "-")}</strong></div>
-            <div><span>ทะเบียนรถ</span><strong>${escapeHtml(res.plateNo || payload.plateNo || "-")}</strong></div>
-            <div><span>พขร.</span><strong>${escapeHtml(res.driverFullName || payload.driverFullName || "-")}</strong></div>
-            <div><span>ECD</span><strong>${escapeHtml(res.ecdName || payload.ecdName || "-")}</strong></div>
-            <div><span>TCR</span><strong>${escapeHtml(res.tcrNo || payload.tcrNo || "-")}</strong></div>
-            <div><span>เวลาออก</span><strong>${escapeHtml(res.timestampOut || "-")}</strong></div>
-            <div><span>Duration</span><strong>${escapeHtml(res.duration || "-")}</strong></div>
-          </div>
-        `,
-        confirmButtonText: "ตกลง"
-      });
+  icon: "success",
+  title: "บันทึกสำเร็จ",
+  html: buildSubmitSuccessHtml(res, payload),
+  customClass: {
+    popup: "palletSuccessPopup",
+    title: "palletSuccessTitle",
+    htmlContainer: "palletSuccessHtml",
+    confirmButton: "palletSuccessConfirm"
+  },
+  confirmButtonText: "ตกลง",
+  buttonsStyling: false,
+  width: 620
+});
 
       await loadInboundRows(true);
 
